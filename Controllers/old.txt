@@ -4872,55 +4872,72 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para actualizar una marca de vehiculo en la base de de datos local
-        //Samy
         [HttpPost]
         public JsonResult WsUpdateMarca(marca marca)
         {
+
             int DataAfected = 0;
             DataResponse data = new DataResponse();
             try
             {
+
+
                 if (GlobalesCorporativo.StatusAPP == "PADRE")
                 {
                     string sSelect = "";
                     var d = "";
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaMarca + "] SET [MarcDesc] =@MarcDesc WHERE MarcID = @MarcID";
                     var ArrParametros1 = new List<SqlParameter>();
+
+
+
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaMarca + "] SET [MarcDesc] =@MarcDesc  WHERE MarcID = @MarcID";
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcDesc", Value = marca.MarcDesc });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcID", Value = marca.MarcID });
+
                     DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", marca, "WsUpdateMarca");
+
                     if (DataAfected > 0)
                     {
+
                         data.Message = "SUCCESSFULLY UPDATED";
                         data.Status = "OK";
                     }
                     else
                     {
+
                         data.Message = "FAILED UPDATED OF BRAND";
                         data.Status = "ERROR";
                     }
                 }
+
+
                 if (GlobalesCorporativo.StatusAPP == "HIJO")
                 {
                     string sSelect = "";
                     var d = "";
+                    var ArrParametros1 = new List<SqlParameter>();
                     sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaMarca + "] SET [MarcDesc] = @MarcDesc WHERE MarcID = @MarcID";
-                    var ArrParametros2 = new List<SqlParameter>();
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@MarcDesc", Value = marca.MarcDesc });
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@MarcID", Value = marca.MarcID });
-                    DataAfected = BD.SetSQL(ArrParametros2, sSelect, "Local");
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcDesc", Value = marca.MarcDesc });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcID", Value = marca.MarcID });
+
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
+
                     if (DataAfected > 0)
                     {
+
                         data.Message = "SUCCESSFULLY UPDATED";
                         data.Status = "OK";
                     }
                     else
                     {
+
                         data.Message = "FAILED UPDATED OF BRAND";
                         data.Status = "ERROR";
                     }
                 }
+
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -4931,35 +4948,40 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  una marca de vehiculo en la bd local", "Ha ocurrido un error en la consulta al actualizar una marca de vehiculo en la bd local", "", "", "", "");
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
+
+
+
         }
+
+
+
         // Este metodo es utilizado para insertar una marca de vehiculo en la base de de datos local
         [HttpPost]
         public JsonResult WsInsertMarca(marca marca)
         {
+
             int DataAfected = 0;
             DataResponse data = new DataResponse();
             try
             {
+
                 if (GlobalesCorporativo.StatusAPP == "PADRE")
                 {
                     string sSelect = "";
                     var d = "";
 
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO [dbo].[" + GlobalesLocal.TablaMarca + "] ([MarcID] ,[MarcDesc] ,[Status]) VALUES ((select MAX(MarcID)+1 from [" + GlobalesLocal.TablaMarca + "]), @MarcDesc , 1)";
-
-                    var ArrParametros1 = new List<SqlParameter>();
-
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcDesc", Value = marca.MarcDesc });
-
-                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", marca, "WsInsertMarca");
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO [dbo].[" + GlobalesLocal.TablaMarca + "] ([MarcID] ,[MarcDesc] ,[Status]) VALUES ((select MAX(MarcID)+1 from [" + GlobalesLocal.TablaMarca + "]), '" + marca.MarcDesc + "' , 1)";
+                    DataAfected = BD.SetSQL(sSelect, "Local", marca, "WsInsertMarca");
 
                     if (DataAfected > 0)
                     {
+
                         data.Message = "SUCCESSFUL UPDATED";
                         data.Status = "OK";
                     }
                     else
                     {
+
                         data.Message = "FAILED INSERT OF BRAND";
                         data.Status = "ERROR";
                     }
@@ -4970,23 +4992,23 @@ namespace WSTankFarm.Controllers
                     string sSelect = "";
                     var d = "";
 
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO [dbo].[" + GlobalesLocal.TablaMarca + "] ([MarcID] ,[MarcDesc] ,[Status]) VALUES ((select MAX(MarcID)+1 from [" + GlobalesLocal.TablaMarca + "]), @MarcDesc, 1)";
-                    var ArrParametros2 = new List<SqlParameter>();
-
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@MarcDesc", Value = marca.MarcDesc });
-                    DataAfected = BD.SetSQL(ArrParametros2, sSelect, "Local");
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO [dbo].[" + GlobalesLocal.TablaMarca + "] ([MarcID] ,[MarcDesc] ,[Status]) VALUES ((select MAX(MarcID)+1 from [" + GlobalesLocal.TablaMarca + "]), '" + marca.MarcDesc + "' , 1)";
+                    DataAfected = BD.SetSQL(sSelect, "Local");
 
                     if (DataAfected > 0)
                     {
+
                         data.Message = "SUCCESSFUL UPDATED";
                         data.Status = "OK";
                     }
                     else
                     {
+
                         data.Message = "FAILED INSERT OF BRAND";
                         data.Status = "ERROR";
                     }
                 }
+
                 return Json(data, JsonRequestBehavior.AllowGet);
 
             }
@@ -4999,7 +5021,12 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al insertar  una marca de vehiculo en la bd local", "Ha ocurrido un error en la consulta al insertar una marca de vehiculo en la bd local", "", "", "", "");
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
+
+
+
         }
+
+
         // Este metodo es utilizado para obtener los modelos
         [HttpGet]
         public JsonResult WsGetmodelos()
@@ -5010,17 +5037,22 @@ namespace WSTankFarm.Controllers
             try
             {
                 string sSelectLocaL = "";
+
                 sSelectLocaL = "Select * from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.Tablamodelo + "] where status<>0";
-                var ArrParametros1 = new List<SqlParameter>();
-                dT = BD.GetSQL(sSelectLocaL, "Local", ArrParametros1);
+
+                dT = BD.GetSQL(sSelectLocaL, "Local");
+
                 foreach (DataRow dR1 in dT.Rows)
                 {
+
                     modelo modelo = new modelo();
+
                     modelo.ModelId = dR1["ModelId"].ToString();
                     modelo.ModelDesc = dR1["ModelDesc"].ToString();
                     modelo.MarcID = dR1["MarcID"].ToString();
                     lstmodelo.Add(modelo);
                 }
+
                 if (lstmodelo.Count > 0)
                 {
                     data.lstmodelo = lstmodelo;
@@ -5033,7 +5065,9 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
+
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -5044,28 +5078,29 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los modelos", "Ha ocurrido un error en la consulta al obtener los modelos", "", "", "", "");
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
+
+
+
         }
+
         // Este metodo es utilizado para actualizar un modelo de vehiculo en la base de de datos local
         [HttpPost]
         public JsonResult WsUpdateModelo(modelo modelo)
         {
+
             int DataAfected = 0;
             DataResponse data = new DataResponse();
             try
             {
+
+
                 if (GlobalesCorporativo.StatusAPP == "PADRE")
                 {
                     string sSelect = "";
                     var d = "";
 
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.Tablamodelo + "] SET [ModelDesc] = @ModelDesc WHERE ModelId = @ModelId";
-
-                    var ArrParametros1 = new List<SqlParameter>();
-
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ModelDesc", Value = modelo.ModelDesc });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ModelId", Value = modelo.ModelId });
-
-                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", modelo, "WsUpdateModelo");
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.Tablamodelo + "] SET [ModelDesc] = '" + modelo.ModelDesc + "' WHERE ModelId = '" + modelo.ModelId + "'";
+                    DataAfected = BD.SetSQL(sSelect, "Local", modelo, "WsUpdateModelo");
 
                     if (DataAfected > 0)
                     {
@@ -5081,32 +5116,34 @@ namespace WSTankFarm.Controllers
                     }
 
                 }
+
 
                 if (GlobalesCorporativo.StatusAPP == "HIJO")
                 {
                     string sSelect = "";
                     var d = "";
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.Tablamodelo + "] SET [ModelDesc] = @ModelDesc WHERE ModelId = @ModelId";
 
-                    var ArrParametros2 = new List<SqlParameter>();
-
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@ModelDesc", Value = modelo.ModelDesc });
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@ModelId", Value = modelo.ModelId });
-
-                    DataAfected = BD.SetSQL(ArrParametros2, sSelect, "Local");
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.Tablamodelo + "] SET [ModelDesc] = '" + modelo.ModelDesc + "' WHERE ModelId = '" + modelo.ModelId + "'";
+                    DataAfected = BD.SetSQL(sSelect, "Local");
 
                     if (DataAfected > 0)
                     {
+
                         data.Message = "SUCCESSFULLY UPDATED";
                         data.Status = "OK";
                     }
                     else
                     {
+
                         data.Message = "FAILED UPDATED OF MODEL";
                         data.Status = "ERROR";
                     }
+
                 }
+
+
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -5117,7 +5154,13 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  un modelo de vehiculo en la bd local", "Ha ocurrido un error en la consulta al actualizar un modelo de vehiculo en la bd local", "", "", "", "");
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
+
+
+
         }
+
+
+
         // Este metodo es utilizado para insertar una configuracion en la base de datos local
         [HttpPost]
         public JsonResult WsUpdateConfiguracion(Configuracion configuracion)
@@ -5127,26 +5170,23 @@ namespace WSTankFarm.Controllers
             try
             {
                 string sSelectLocaL = "";
-                sSelectLocaL = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaConfiguracion + "] SET [IPSERVIDOR]=@IPSERVIDOR,[IPCONTROLGAS1]=@IPCONTROLGAS1,[IPCONTROLGAS2]=@IPCONTROLGAS2,[IPPLC]=@IPPLC,[REPORTESPOR]=@REPORTESPOR,[FECHA]=GETDATE() where ID=@ID";
-                var ArrParametros1 = new List<SqlParameter>();
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IPSERVIDOR", Value = configuracion.IPSERVIDOR });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IPCONTROLGAS1", Value = configuracion.IPCONTROLGAS1 });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IPCONTROLGAS2", Value = configuracion.IPCONTROLGAS2 });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IPPLC", Value = configuracion.IPPLC });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@REPORTESPOR", Value = configuracion.REPORTESPOR });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = configuracion.ID });
-                DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "Local");
+
+                sSelectLocaL = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaConfiguracion + "] SET [IPSERVIDOR] = '" + configuracion.IPSERVIDOR + "' ,[IPCONTROLGAS1] = '" + configuracion.IPCONTROLGAS1 + "' ,[IPCONTROLGAS2] = '" + configuracion.IPCONTROLGAS2 + "' ,[IPPLC] = '" + configuracion.IPPLC + "',[REPORTESPOR] = '" + configuracion.REPORTESPOR + "' ,[FECHA] = GETDATE() where ID='" + configuracion.ID + "' ";
+                DataAfectedLocal = BD.SetSQL(sSelectLocaL, "Local");
+
                 if (DataAfectedLocal > 0)
                 {
-                    data.Message = "SUCCESSFUL UPDATE";
+                    data.Message = "SUCCESSFUL INSERTION";
                     data.Status = "OK";
                 }
                 else
                 {
+
                     data.Message = "FAILED INSERTION OF CONFIGURACIÓN";
                     data.Status = "ERROR";
                 }
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -5157,7 +5197,14 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar en configuracion", "Ha ocurrido un error en la consulta al Insertar en configuracion", "", "", "", "");
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
+
+
+
         }
+
+
+
+
         //Este ws es utilizado para actualizar los acumulados en un  vehiculo en la base de datos de control Gas
         [HttpGet]
         public JsonResult WsUpdateAcumuladosVehicles(int value = 0, string tag = "")
@@ -5176,17 +5223,9 @@ namespace WSTankFarm.Controllers
                 acumes = Convert.ToInt32(results[0]["acumes"]) + value;
                 int DataAfected = 0;
                 string sSelect = "";
+                sSelect = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "]  UPDATE [dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "]SET acudia='" + acudia + "', acusem= '" + acusem + "' , [acumes] = '" + acumes + "' WHERE   [tag]='" + tag + "'";
+                DataAfected = BD.SetSQL(sSelect, "ControlGas");
 
-                sSelect = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "]  UPDATE [dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "]SET acudia=@acudia, acusem=@acusem, acumes=@acumes WHERE tag=@tag";
-
-                var ArrParametros1 = new List<SqlParameter>();
-
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@acudia", Value = acudia });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@acusem", Value = acusem });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@acumes", Value = acumes });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@tag", Value = tag });
-
-                DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
                 if (DataAfected > 0)
                 {
                     data.Message = "SUCCESSFUL UPGRADE OF VEHICLES";
@@ -5209,6 +5248,8 @@ namespace WSTankFarm.Controllers
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
         }
+
+
         // Este metodo es utilizado para obtener la configuracion guardada en la tabla configuracion
         [HttpGet]
         public JsonResult GetConfiguracion(string ID = "0")
@@ -5227,53 +5268,59 @@ namespace WSTankFarm.Controllers
                 int IDRol = 0;
                 if (ID != "0")
                 {
-                    sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "] where ID=@ID";
+                    sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "] where ID='" + ID + "'";
                 }
                 else
                 {
-                    sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "]";
+                    sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "]";
                 }
-                var ArrParametros1 = new List<SqlParameter>();
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = ID });
-                dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
+
+
+
+                dT = BD.GetSQL(sSelect, "Local");
                 var columnas = dT.Columns;
                 //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
                 foreach (DataRow dR1 in dT.Rows)
                 {
+
+
+
+
                     ObjConfiguracion.ID = dR1["ID"].ToString();
                     ObjConfiguracion.IPSERVIDOR = dR1["IPSERVIDOR"].ToString();
                     ObjConfiguracion.IPCONTROLGAS1 = dR1["IPCONTROLGAS1"].ToString();
                     ObjConfiguracion.IPCONTROLGAS2 = dR1["IPCONTROLGAS2"].ToString();
                     ObjConfiguracion.IPPLC = dR1["IPPLC"].ToString();
                     ObjConfiguracion.REPORTESPOR = dR1["REPORTESPOR"].ToString();
-                    //*******************Comente las siguientes lineas ya que no se encuetran en la tabla*******************
-                    //ObjConfiguracion.DESTINATARIOS = dR1["DESTINATARIOS"].ToString();
-                    //ObjConfiguracion.EMAIL = dR1["EMAIL"].ToString();
-                    //ObjConfiguracion.PASSWORD = dR1["PASSWORD"].ToString();
-                    //ObjConfiguracion.SMTP = dR1["SMTP"].ToString();
-                    //ObjConfiguracion.PORT = dR1["PORT"].ToString();
-                    //*******************----------------------------------------------------------------*******************
+                    ObjConfiguracion.DESTINATARIOS = dR1["DESTINATARIOS"].ToString();
+                    ObjConfiguracion.EMAIL = dR1["EMAIL"].ToString();
+                    ObjConfiguracion.PASSWORD = dR1["PASSWORD"].ToString();
+                    ObjConfiguracion.SMTP = dR1["SMTP"].ToString();
+                    ObjConfiguracion.PORT = dR1["PORT"].ToString();
+
                     ObjConfiguracion.FECHA = Convert.ToDateTime(dR1["FECHA"]).ToString("dd/MM/yyyy");
+
+
+
                     SelectManager = "select ID,Rol from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaRol + "] where Rol='SYSTEM MANAGER'";
-                    var ArrParametros2 = new List<SqlParameter>();
-                    dTRol = BD.GetSQL(SelectManager, "Local", ArrParametros2);
+                    dTRol = BD.GetSQL(SelectManager, "Local");
                     foreach (DataRow Rol in dTRol.Rows)
                     {
                         IDRol = Convert.ToInt32(Rol["ID"]);
                         break;
+
                     }
                     if (IDRol != 0)
                     {
-                        var ArrParametros3 = new List<SqlParameter>();
-                        ArrParametros3.Add(new SqlParameter { ParameterName = "@IdRol", Value = IDRol });
-                        SelectUser = "select Nombre,Telefono,Correo from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaUsuarios + "]where IdRol=@IdRol";
-                        dTUser = BD.GetSQL(SelectUser, "Local", ArrParametros3);
+                        SelectUser = "select Nombre,Telefono,Correo from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaUsuarios + "]where IdRol='" + IDRol + "'";
+                        dTUser = BD.GetSQL(SelectUser, "Local");
                         foreach (DataRow User in dTUser.Rows)
                         {
                             ObjConfiguracion.MANAGER = User["Nombre"].ToString();
                             ObjConfiguracion.TELEFONO = User["Telefono"].ToString();
                             ObjConfiguracion.CORREO = User["Correo"].ToString();
                             break;
+
                         }
                     }
                     else
@@ -5282,8 +5329,11 @@ namespace WSTankFarm.Controllers
                         ObjConfiguracion.TELEFONO = "N/A";
                         ObjConfiguracion.CORREO = "N/A";
                     }
+
+
                     lstConfiguracion.Add(ObjConfiguracion);
                 }
+
                 if (lstConfiguracion.Count > 0)
                 {
                     data.lstConfiguracion = lstConfiguracion;
@@ -5297,6 +5347,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -5307,21 +5358,27 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "", "", "", "");
                 return Json(data, JsonRequestBehavior.AllowGet);
             }
-        }
 
+
+
+        }
 
         [HttpGet]
         public JsonResult WsCheckReport()
         {
+
+
             DataResponse data = new DataResponse();
             try
             {
                 string sSelect = "";
+
+
                 DataTable dT = new DataTable();
                 Configuracion ObjConfiguracion = new Configuracion();
                 sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "]";
-                var ArrParametros1 = new List<SqlParameter>();
-                dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
+
+                dT = BD.GetSQL(sSelect, "Local");
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -5332,13 +5389,12 @@ namespace WSTankFarm.Controllers
                     ObjConfiguracion.FECHA = dR1["FECHA"].ToString();
                     ObjConfiguracion.IPPLC = dR1["IPPLC"].ToString();
                     ObjConfiguracion.REPORTESPOR = dR1["REPORTESPOR"].ToString();
-                    //*******************Comente las siguientes lineas ya que no se encuetran en la tabla*******************
-                    //ObjConfiguracion.DESTINATARIOS = dR1["DESTINATARIOS"].ToString();
-                    //ObjConfiguracion.EMAIL = dR1["EMAIL"].ToString();
-                    //ObjConfiguracion.PASSWORD = dR1["PASSWORD"].ToString();
-                    //ObjConfiguracion.SMTP = dR1["SMTP"].ToString();
-                    //ObjConfiguracion.PORT = dR1["PORT"].ToString();
-                    //*******************----------------------------------------------------------------*******************
+                    ObjConfiguracion.DESTINATARIOS = dR1["DESTINATARIOS"].ToString();
+                    ObjConfiguracion.EMAIL = dR1["EMAIL"].ToString();
+                    ObjConfiguracion.PASSWORD = dR1["PASSWORD"].ToString();
+                    ObjConfiguracion.SMTP = dR1["SMTP"].ToString();
+                    ObjConfiguracion.PORT = dR1["PORT"].ToString();
+
                     var numdias = 0;
                     if (ObjConfiguracion.REPORTESPOR != "")
                     {
@@ -5364,11 +5420,19 @@ namespace WSTankFarm.Controllers
                         List<ReporteConsumos> Datos = WSGetDatosReporteConsumos(date3.ToString("MM/dd/yyyy"), date2.ToString("MM/dd/yyyy"));
                         data = EnviarReporteConsumos(ObjConfiguracion, "TANK FARM", Datos);
                     }
+
+
+
+
                     //ObjConfiguracion.FECHA =;
                 }
+
+
                 var json = Json(data, JsonRequestBehavior.AllowGet);
                 json.MaxJsonLength = 500000000;
                 return json;
+
+
             }
             catch (Exception e)
             {
@@ -5381,7 +5445,11 @@ namespace WSTankFarm.Controllers
                 json.MaxJsonLength = 500000000;
                 return json;
             }
+
+
+
         }
+
 
         [HttpGet]
         public List<ReporteConsumos> WSGetDatosReporteConsumos(string StartDate, string EndDate)
@@ -5392,14 +5460,9 @@ namespace WSTankFarm.Controllers
             try
             {
                 DataTable dT = new DataTable();
-                string sSelect = "SELECT top 10 isnull(nrotrn,'UNDEFINED') nrotrn,xFecha,isnull(Departamento, 'UNDEFINED') Departamento,isnull(CentroCostos, 'UNDEFINED') CentroCostos,isnull(xProducto, 'UNDEFINED') xProducto,can,isnull(xNombreChofer, 'UNDEFINED') xNombreChofer,(isnull(xMarca + xModelo, 'UNDEFINED')) vehicle,isnull(xCliente, 'UNDEFINED') xCliente FROM  [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll] where xFecha >=CONVERT(datetime,@StartDate,121) and xFecha <=CONVERT(datetime,@EndDate,121)ORDER BY nrotrn asc";
+                string sSelect = "  SELECT top 10 isnull(nrotrn,'UNDEFINED') nrotrn,xFecha,isnull(Departamento, 'UNDEFINED') Departamento,isnull(CentroCostos, 'UNDEFINED') CentroCostos,isnull(xProducto, 'UNDEFINED') xProducto,can,isnull(xNombreChofer, 'UNDEFINED') xNombreChofer,(isnull(xMarca + xModelo, 'UNDEFINED')) vehicle,isnull(xCliente, 'UNDEFINED') xCliente FROM  [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll]  where xFecha >= CONVERT(datetime,'" + StartDate + "',121) and xFecha <=CONVERT(datetime,'" + EndDate + "',121)ORDER BY  nrotrn asc";
 
-                var ArrParametros1 = new List<SqlParameter>();
-
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@StartDate", Value = StartDate });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@EndDate", Value = EndDate });
-
-                dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
+                dT = BD.GetSQL(sSelect, "Local");
                 foreach (DataRow dR1 in dT.Rows)
                 {
                     ReporteConsumos DatosReporte = new ReporteConsumos();
@@ -5427,6 +5490,8 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar en inbox", "Ha ocurrido un error en la consulta al actualizar en inbox", "", "", "", "");
                 return null;
             }
+
+
 
         }
 
@@ -5637,18 +5702,17 @@ namespace WSTankFarm.Controllers
                     string sSelect = "";
                     if (Tag != "0")
                     {
-                        sSelect = "SELECT * FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] WHERE tag =@Tag";
+                        sSelect = "SELECT * FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] WHERE tag =" + Tag;
                     }
 
-                    var ArrParametros1 = new List<SqlParameter>();
 
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@Tag", Value = Tag });
 
-                    dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
+                    dT = BD.GetSQL(sSelect, "ControlGas");
                     var columnas = dT.Columns;
                     //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
                     foreach (DataRow dR1 in dT.Rows)
                     {
+
                         Vehiculo ObjVehiculo = new Vehiculo();
                         ObjVehiculo.codcli = Convert.ToInt32(dR1["codcli"].ToString());
                         ObjVehiculo.nroveh = Convert.ToInt32(dR1["nroveh"].ToString());
@@ -5735,8 +5799,15 @@ namespace WSTankFarm.Controllers
                         ObjVehiculo.catuni = dR1["catuni"].ToString();
                         ObjVehiculo.dialim = dR1["dialim"].ToString();
 
+
+
+
+
+
+
                         lstVehiculos.Add(ObjVehiculo);
                     }
+
                     if (lstVehiculos.Count > 0)
                     {
                         data.lstVehicles = lstVehiculos;
@@ -5750,6 +5821,7 @@ namespace WSTankFarm.Controllers
                         data.Status = "OK";
                     }
                     return Json(data, JsonRequestBehavior.AllowGet);
+
                 }
                 catch (Exception e)
                 {
@@ -5760,8 +5832,16 @@ namespace WSTankFarm.Controllers
                     EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al verificar si existe un vehiculo", "Ha ocurrido un error en la consulta al verificar si existe un vehiculo", "", "", "", "");
                     return Json(mensaje, JsonRequestBehavior.AllowGet);
                 }
+
+
+
+
             }
+
+
         }
+
+
 
         public string ValidaVolumenVehiculo(string Tag = "0", decimal Vol = 0)
         {
@@ -5776,14 +5856,8 @@ namespace WSTankFarm.Controllers
             string sSelect = "";
             System.Data.DataTable dT;
 
-            sSelect = "select * from [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] where tag  =@Tag";
-
-            var ArrParametros1 = new List<SqlParameter>();
-
-            ArrParametros1.Add(new SqlParameter { ParameterName = "@Tag", Value = Tag });
-
-            dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
-
+            sSelect = "select * from [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] where tag  = '" + Tag + "'";
+            dT = BD.GetSQL(sSelect, "ControlGas");
             if (dT.Rows.Count > 0)
             {
                 DataRow dR = dT.Rows[0];
@@ -5841,9 +5915,10 @@ namespace WSTankFarm.Controllers
 
 
                     dT = BD.GetSQL(sSql, "Local", ArrParametros1);
-
                     if (dT.Rows.Count > 0)
                     {
+
+
                         foreach (DataRow dR1 in dT.Rows)
                         {
                             ObjUsuarios.ID = Convert.ToInt32(dR1["ID"]);
@@ -5858,17 +5933,17 @@ namespace WSTankFarm.Controllers
                             ObjUsuarios.Correo = dR1["Correo"].ToString();
                             ObjUsuarios.Status = dR1["Status"].ToString();
                             ObjUsuarios.Compania = dR1["Compania"].ToString();
+
+
+
+
                         }
+
 
                         if (ObjUsuarios.IdRol.ToString() != "" & ObjUsuarios.IdRol.ToString() != "---")
                         {
-                            string SqlR = "SELECT * from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaRol + "] where ID=@ID";
-
-                            var ArrParametros2 = new List<SqlParameter>();
-
-                            ArrParametros2.Add(new SqlParameter { ParameterName = "@ID", Value = ObjUsuarios.IdRol.ToString() });
-
-                            dT = BD.GetSQL(SqlR, "Local", ArrParametros2);
+                            string SqlR = "SELECT * from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaRol + "] where ID='" + ObjUsuarios.IdRol.ToString() + "' ";
+                            dT = BD.GetSQL(SqlR, "Local");
                             foreach (DataRow dR in dT.Rows)
                             {
                                 ObjRoles.ID = dR["ID"];
@@ -5886,26 +5961,39 @@ namespace WSTankFarm.Controllers
                                 ObjRoles.Status = dR["Status"];
                                 ObjUsuarios.Roles = ObjRoles;
                                 lstUsuarios.Add(ObjUsuarios);
+
+
                             }
                         }
                         if (lstRoles.Count > 0)
                         {
+
                             data.lstRoles = lstRoles;
                             data.Message = "ROl";
                             data.Status = "OK";
+
                         }
+
                         data.lstUsuarios = lstUsuarios;
                         data.Message = "Usuario y contraseña correctos";
                         data.Status = "SUCCESSFUL";
                     }
+
+
                     else
                     {
+
                         data.lstUsuarios = lstUsuarios;
                         data.Message = "Usuario y contraseña incorrectos o usuario Inactivo, favor de verificar";
                         data.Status = "FOUND";
+
                     }
+
                 }
+
+
                 return Json(data, JsonRequestBehavior.AllowGet);
+
             }
             catch (Exception e)
             {
@@ -5946,13 +6034,8 @@ namespace WSTankFarm.Controllers
             }
             else
             {
-                sSelect = "SELECT[nrocho] as NumeroChofer,[diacar] as DiasCarro,[hraini] as HoraInicio ,[hrafin] as HoraFin, ChoferesCG.[tag] as Tag,[codest] as Status,[logusu] as Usuario, [logfch] as FechaRegistro, [Nombre] as NombreCompleto,[Telefono],[IdIdioma] as Idioma,[Gerente],[Correo] from[" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] as ChoferesCG inner join[" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "]  as ChoferesTF on ChoferesCG.tag=ChoferesTF.Tag  WHERE ChoferesTF.tag =@Tag";
-
-                var ArrParametros1 = new List<SqlParameter>();
-
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Tag", Value = Tag });
-
-                dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
+                sSelect = "SELECT[nrocho] as NumeroChofer,[diacar] as DiasCarro,[hraini] as HoraInicio ,[hrafin] as HoraFin, ChoferesCG.[tag] as Tag,[codest] as Status,[logusu] as Usuario, [logfch] as FechaRegistro, [Nombre] as NombreCompleto,[Telefono],[IdIdioma] as Idioma,[Gerente],[Correo] from[" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] as ChoferesCG inner join[" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "]  as ChoferesTF on ChoferesCG.tag=ChoferesTF.Tag  WHERE ChoferesTF.tag ='" + Tag + "'";
+                dT = BD.GetSQL(sSelect, "ControlGas");
 
                 foreach (DataRow dR1 in dT.Rows)
                 {
@@ -6081,14 +6164,10 @@ namespace WSTankFarm.Controllers
             string sSelect = "";
             if (Tag != "0")
             {
-                sSelect = "select* from[" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] where tag  = @Tag";
+                sSelect = "select* from[" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "] where tag  = '" + Tag + "'";
             }
 
-            var ArrParametros1 = new List<SqlParameter>();
-
-            ArrParametros1.Add(new SqlParameter { ParameterName = "@Tag", Value = Tag });
-
-            dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
+            dT = BD.GetSQL(sSelect, "ControlGas");
 
             foreach (DataRow dR1 in dT.Rows)
             {
@@ -6192,14 +6271,10 @@ namespace WSTankFarm.Controllers
             try
             {
                 string sSelect = "";
-                sSelect = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "]  UPDATE [dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "]SET [ultodm] =@odometro  WHERE tag=@tag";
+                sSelect = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "]  UPDATE [dbo].[" + GlobalesCorporativo.TablaClientesVehiculos + "]SET [ultodm] = '" + odometro + "'  WHERE tag='" + tag + "' ";
 
-                var ArrParametros1 = new List<SqlParameter>();
 
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@tag", Value = tag });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@odometro", Value = odometro });
-
-                DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
+                DataAfected = BD.SetSQL(sSelect, "ControlGas");
 
                 if (DataAfected > 0)
                 {
@@ -6349,9 +6424,7 @@ namespace WSTankFarm.Controllers
             System.Data.DataTable dT;
             string sSelect = "";
             sSelect = "select* from [" + GlobalesLocal.BDLocal + "].[dbo].[INBOX_CORREO] where STATUSMSJ='Error' or STATUSMSJ='Enviando' ";
-            var ArrParametros1 = new List<SqlParameter>();
-
-            dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
+            dT = BD.GetSQL(sSelect, "Local");
 
             foreach (DataRow dR1 in dT.Rows)
             {
@@ -6368,6 +6441,8 @@ namespace WSTankFarm.Controllers
 
         }
 
+
+
         public List<Inbox> GetDatosInbox()
         {
             bool result = false;
@@ -6376,10 +6451,7 @@ namespace WSTankFarm.Controllers
             Inbox ObjInbox = new Inbox();
             string sSelect = "";
             sSelect = "select* from [" + GlobalesLocal.BDLocal + "].[dbo].[INBOX_CORREO] where STATUSMSJ='Error' or STATUSMSJ='Enviando' ";
-
-            var ArrParametros1 = new List<SqlParameter>();
-
-            dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
+            dT = BD.GetSQL(sSelect, "Local");
 
             foreach (DataRow dR1 in dT.Rows)
             {
@@ -6397,6 +6469,13 @@ namespace WSTankFarm.Controllers
 
         }
 
+
+
+
+
+
+
+
         // Este metodo es utilizado para insertar una un mensaje por enviar en la tabla de inbox en la base de datos local
         [HttpPost]
         public string WsInsertarInbox(string MENSAJE, string CORREO, int IDUSER, string STATUSMSJ, int INTENTOS)
@@ -6407,17 +6486,9 @@ namespace WSTankFarm.Controllers
             {
                 string sSelectLocaL = "";
 
-                sSelectLocaL = " INSERT INTO[dbo].[INBOX_CORREO] ([FECHA] ,[MENSAJE] ,[CORREO] ,[IDUSER] ,[STATUSMSJ],[INTENTOS]) VALUES (GETDATE() ,@MENSAJE,@CORREO,@IDUSER,@STATUSMSJ,@INTENTOS)  SELECT SCOPE_IDENTITY();";
+                sSelectLocaL = " INSERT INTO[dbo].[INBOX_CORREO] ([FECHA] ,[MENSAJE] ,[CORREO] ,[IDUSER] ,[STATUSMSJ],[INTENTOS]) VALUES (GETDATE() ,'" + MENSAJE + "' ,'" + CORREO + "' ,'" + IDUSER + "' ,'" + STATUSMSJ + "'," + INTENTOS + ")  SELECT SCOPE_IDENTITY();";
 
-                var ArrParametros1 = new List<SqlParameter>();
-
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@MENSAJE", Value = MENSAJE });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@CORREO", Value = CORREO });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IDUSER", Value = IDUSER });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@STATUSMSJ", Value = STATUSMSJ });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@INTENTOS", Value = INTENTOS });
-
-                DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "Local");
+                DataAfectedLocal = BD.SetSQL(sSelectLocaL, "Local");
 
                 if (DataAfectedLocal > 0)
                 {
@@ -6431,6 +6502,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "ERROR";
                 }
                 return data.Message;
+
             }
             catch (Exception e)
             {
@@ -6441,7 +6513,13 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al insertar en inbox", "Ha ocurrido un error en la consulta al insertar en inbox", "", "", "", "");
                 return data.Message;
             }
+
+
+
         }
+
+
+
 
         // Este metodo es utilizado para actualizar una un mensaje por enviar en la tabla de inbox en la base de datos local
         [HttpPost]
@@ -6453,17 +6531,9 @@ namespace WSTankFarm.Controllers
             {
                 string sSelectLocaL = "";
 
-                sSelectLocaL = "UPDATE [dbo].[INBOX_CORREO] SET [FECHA]=GETDATE() ,[MENSAJE]=@MENSAJE,[CORREO]=@CORREO,[IDUSER]=@IDUSER,[STATUSMSJ]=@STATUSMSJ,INTENTOS=@INTENTOS WHERE STATUSMSJ='Enviando' or STATUSMSJ='Error'";
+                sSelectLocaL = "UPDATE [dbo].[INBOX_CORREO] SET [FECHA]=GETDATE() ,[MENSAJE]='" + MENSAJE + "' ,[CORREO]='" + CORREO + "' ,[IDUSER]='" + IDUSER + "' ,[STATUSMSJ]='" + STATUSMSJ + "', INTENTOS=" + INTENTOS + " WHERE  STATUSMSJ='Enviando' or STATUSMSJ='Error'";
 
-                var ArrParametros1 = new List<SqlParameter>();
-
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@MENSAJE", Value = MENSAJE });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@CORREO", Value = CORREO });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@IDUSER", Value = IDUSER });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@STATUSMSJ", Value = STATUSMSJ });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@INTENTOS", Value = INTENTOS });
-
-                DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "Local");
+                DataAfectedLocal = BD.SetSQL(sSelectLocaL, "Local");
 
                 if (DataAfectedLocal > 0)
                 {
@@ -6472,10 +6542,12 @@ namespace WSTankFarm.Controllers
                 }
                 else
                 {
+
                     data.Message = "FAILED UPGRADE OF INBOX";
                     data.Status = "ERROR";
                 }
                 return data.Message;
+
             }
             catch (Exception e)
             {
@@ -6486,6 +6558,9 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar en inbox", "Ha ocurrido un error en la consulta al actualizar en inbox", "", "", "", "");
                 return data.Message;
             }
+
+
+
         }
 
         // Este metodo es utilizado para actualizar una un mensaje por enviar en la tabla de inbox en la base de datos local
@@ -6503,10 +6578,7 @@ namespace WSTankFarm.Controllers
 
                 sSelectLocaL = "select replace(ltrim(rtrim(concat(nombre,LastName,SecondLastName))),' ','' )as Name,ID FROM [TANKFARM].[dbo].[CHOFERES]";
 
-                var ArrParametros1 = new List<SqlParameter>();
-
-
-                dT = BD.GetSQL(sSelectLocaL, "local", ArrParametros1);
+                dT = BD.GetSQL(sSelectLocaL, "local");
                 var columnas = dT.Columns;
                 //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
                 foreach (DataRow dR1 in dT.Rows)
@@ -6515,15 +6587,8 @@ namespace WSTankFarm.Controllers
                     ID = dR1["ID"].ToString();
 
                     string updatename = "";
-                    updatename = "UPDATE[dbo].[CHOFERES] SET[NameComplete] =@name WHERE ID=@ID";
-
-                    var ArrParametros2 = new List<SqlParameter>();
-
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@name", Value = name });
-                    ArrParametros2.Add(new SqlParameter { ParameterName = "@ID", Value = ID });
-
-
-                    DataAfectedLocal = BD.SetSQL(ArrParametros2, updatename, "Local");
+                    updatename = "UPDATE[dbo].[CHOFERES] SET[NameComplete] = '" + name + "' WHERE ID='" + ID + "'";
+                    DataAfectedLocal = BD.SetSQL(updatename, "Local");
                     if (DataAfectedLocal > 0)
                     {
                         data.Message = "SUCCESSFUL UPDATE";
@@ -6531,11 +6596,15 @@ namespace WSTankFarm.Controllers
                     }
                     else
                     {
+
                         data.Message = "FAILED UPGRADE OF INBOX";
                         data.Status = "ERROR";
                     }
                 }
+
+
                 return data.Message;
+
             }
             catch (Exception e)
             {
@@ -6546,6 +6615,9 @@ namespace WSTankFarm.Controllers
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar en inbox", "Ha ocurrido un error en la consulta al actualizar en inbox", "", "", "", "");
                 return data.Message;
             }
+
+
+
         }
 
         [HttpGet]
@@ -6743,7 +6815,7 @@ namespace WSTankFarm.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetDatosProc(string FechaIni = "", string FechaFin = "", string columnaBuscar = "", string TipoCombustible = "")       
+        public JsonResult GetDatosProc(string FechaIni = "", string FechaFin = "", string columnaBuscar = "", string TipoCombustible = "")
         {
             List<Despacho> lstDespachos = new List<Despacho>();
             List<DatosResultProc> lstProc = new List<DatosResultProc>();
@@ -6756,18 +6828,11 @@ namespace WSTankFarm.Controllers
             try
             {
 
-                string sSelect = "USE [" + GlobalesLocal.BDLocal + "] EXEC [dbo].[ProcxReporte] @FechaInicio=@FechaIni,@FechaFin=@FechaFin,@ColumnaBuscar=@columnaBuscar,@Combustible=@TipoCombustible";
+                string sSelect = "USE [" + GlobalesLocal.BDLocal + "] EXEC [dbo].[ProcxReporte] @FechaInicio='" + FechaIni + "',@FechaFin='" + FechaFin + "',@ColumnaBuscar='" + columnaBuscar + "',@Combustible='" + TipoCombustible + "'";
 
                 if (sSelect != "")
                 {
-                    var ArrParametros1 = new List<SqlParameter>();
-
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@FechaIni", Value = FechaIni });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@FechaFin", Value = FechaFin });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@columnaBuscar", Value = columnaBuscar });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@TipoCombustible", Value = TipoCombustible });
-
-                    dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
+                    dT = BD.GetSQL(sSelect, "ControlGas");
                     var columnas = dT.Columns;
                     ObjProc.ArrayFechas = lsColumns;
                     foreach (DataRow dR1 in dT.Rows)
@@ -6847,12 +6912,12 @@ namespace WSTankFarm.Controllers
                 string sSelect = "";
                 if (GlobalesCorporativo.StatusAPP == "PADRE")
                 {
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] Select B.nameCentro, isnull(Cantidad,0)Cantidad from (Select CentroCostos, SUM(Cantidad)Cantidad from( SELECT isnull(CentroCostos,'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll] as A where ltrim(xProducto) =  @Combustible  and xFecha >= CONVERT(datetime,  @FechaIni , 121) and xFecha <= CONVERT(datetime, @FechaFin, 121) GROUP BY CentroCostos UNION ALL SELECT  isnull(CentroCostos, 'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM [10.70.100.137\\MSSQLSERVER2014].[TANKFARM].[dbo].[VDespachosAll] as A where ltrim(xProducto) = @Combustible and xFecha >= CONVERT(datetime, @FechaIni, 121) and xFecha <= CONVERT(datetime, @FechaFin, 121) GROUP BY CentroCostos )T0 group by CentroCostos)T0 right JOIN(Select NameCentro from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaCentroCostos + "] UNION Select 'UNDEFINED' as NameCentro) as B ON T0.CentroCostos = B.nameCentro order by CentroCostos";
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] Select B.nameCentro, isnull(Cantidad,0)Cantidad from (Select CentroCostos, SUM(Cantidad)Cantidad from( SELECT isnull(CentroCostos,'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll] as A where ltrim(xProducto) = '" + Combustible + "' and xFecha >= CONVERT(datetime, '" + FechaIni + "', 121) and xFecha <= CONVERT(datetime, '" + FechaFin + "', 121) GROUP BY CentroCostos UNION ALL SELECT  isnull(CentroCostos, 'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM [10.70.100.137\\MSSQLSERVER2014].[TANKFARM].[dbo].[VDespachosAll] as A where ltrim(xProducto) = '" + Combustible + "' and xFecha >= CONVERT(datetime, '" + FechaIni + "', 121) and xFecha <= CONVERT(datetime, '" + FechaFin + "', 121) GROUP BY CentroCostos )T0 group by CentroCostos)T0 right JOIN(Select NameCentro from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaCentroCostos + "] UNION Select 'UNDEFINED' as NameCentro) as B ON T0.CentroCostos = B.nameCentro order by CentroCostos";
 
                 }
                 else
                 {
-                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] Select B.nameCentro, isnull(Cantidad,0)Cantidad from (SELECT isnull(CentroCostos,'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM   [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll] as A where  ltrim(xProducto) = @Combustible and xFecha >= CONVERT(datetime,  @FechaIni, 121) and xFecha <= CONVERT(datetime, @FechaFin, 121)  GROUP BY CentroCostos)T0  right JOIN(Select NameCentro from CentroCostos UNION Select 'UNDEFINED' as NameCentro) as B  ON T0.CentroCostos = B.nameCentro  order by CentroCostos";
+                    sSelect = "USE [" + GlobalesLocal.BDLocal + "] Select B.nameCentro, isnull(Cantidad,0)Cantidad from (SELECT isnull(CentroCostos,'UNDEFINED') CentroCostos, SUM(can) Cantidad FROM   [" + GlobalesLocal.BDLocal + "].[dbo].[VDespachosAll] as A where  ltrim(xProducto) = '" + Combustible + "' and xFecha >= CONVERT(datetime, '" + FechaIni + "', 121) and xFecha <= CONVERT(datetime, '" + FechaFin + "', 121)  GROUP BY CentroCostos)T0  right JOIN(Select NameCentro from CentroCostos UNION Select 'UNDEFINED' as NameCentro) as B  ON T0.CentroCostos = B.nameCentro  order by CentroCostos";
 
                 }
 
@@ -6860,14 +6925,7 @@ namespace WSTankFarm.Controllers
 
                 if (sSelect != "")
                 {
-                    var ArrParametros1 = new List<SqlParameter>();
-
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@FechaIni", Value = FechaIni });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@FechaFin", Value = FechaFin });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@Combustible", Value = Combustible });
-
-
-                    dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
+                    dT = BD.GetSQL(sSelect, "ControlGas");
                     var columnas = dT.Columns;
 
                     foreach (DataRow dR1 in dT.Rows)
@@ -6912,7 +6970,7 @@ namespace WSTankFarm.Controllers
                 return Json(mensaje, JsonRequestBehavior.AllowGet);
             }
         }
-        //Samy
+
 
 
 
@@ -7190,6 +7248,193 @@ namespace WSTankFarm.Controllers
 
 
 
+
+
+
+
+        //public void creaExcel()
+        //{
+
+
+
+
+        //    Excel.Application excel = new Excel.Application();
+        //    Excel._Workbook libro = null;
+        //    Excel._Worksheet hoja = null;
+        //    Excel.Range rango = null;
+
+        //    try
+        //    {
+
+
+
+        //        // Crear un objeto SqlConnection, y luego pasar la ConnectionString al constructor.            
+        //        SqlConnection Conection = new SqlConnection("Data Source=DESKTOP-QUK1H16;Initial Catalog=[CORPORATIVO_MODERNOS];User ID=sa;Password=electronica");
+
+        //        // Utilizar una variable para almacenar la instrucción SQL.
+        //        string SelectString = "SELECT[nrocho] as NumeroChofer,[diacar] as DiasCarro,[hraini] as HoraInicio ,[hrafin] as HoraFin, ChoferesCG.[tag] as Tag,[codest] as Status,[logusu] as Usuario, [logfch] as FechaRegistro, [Nombre] as NombreCompleto,[Telefono],[IdIdioma] as Idioma,[Gerente],[Correo] from["+ GlobalesCorporativo.BDCorporativoModerno + "].[dbo].["+ GlobalesCorporativo.TablaClientesChoferes +"] as ChoferesCG inner join[" + GlobalesLocal. BDLocal +"].[dbo].["+ GlobalesLocal.TablaChoferes +"]  as ChoferesTF on ChoferesCG.tag=ChoferesTF.Tag";
+        //        SqlDataAdapter Adaptador = new SqlDataAdapter(SelectString, Conection);
+        //        DataSet DS = new DataSet();
+
+
+
+
+
+        //        // Abrir la conexión.
+        //        Conection.Open();
+        //        Adaptador.Fill(DS);
+        //        Conection.Close();
+
+        //        //creamos un libro nuevo y la hoja con la que vamos a trabajar
+        //        libro = (Excel._Workbook)excel.Workbooks.Add(Excel.XlWBATemplate.xlWBATWorksheet);
+        //        hoja = (Excel._Worksheet)libro.Worksheets.Add();
+        //        hoja.Name = "EJEMPLO";
+        //        ((Excel.Worksheet)excel.ActiveWorkbook.Sheets["Hoja1"]).Delete();   //Borramos la hoja que crea en el libro por defecto
+
+
+
+        //        //Montamos las cabeceras 
+        //        montaCabeceras(3, ref hoja);
+
+        //        //Rellenamos las celdas
+        //        int fila = 4;
+        //        int i = 4;
+        //        foreach (DataRow Row in DS.Tables[0].Rows)
+        //        {
+
+
+        //            hoja.Cells[i, "A"] = Row.ItemArray[0];
+        //            // ID
+        //            hoja.Cells[i, "B"] = Row.ItemArray[1];
+        //            // Pregunta
+        //            hoja.Cells[i, "C"] = Row.ItemArray[2];
+        //            // Opciones
+        //            hoja.Cells[i, "D"] = Row.ItemArray[3];
+        //            // Valor de la Respuesta
+        //            hoja.Cells[i, "E"] = Row.ItemArray[4];
+        //            //Definimos la fila y la columna del rango 
+        //            string x = "B" + (fila + i).ToString();
+        //            string y = "D" + (fila + i).ToString();
+        //            rango = hoja.Range[x, y];
+        //            rango.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
+
+        //            i++;
+        //        }
+
+
+
+        //        libro.SaveAs(Server.MapPath((@"\Ejemplo.xlsx"))); // Si es un libro nuevo
+        //        libro.Saved = true;
+
+        //        libro.Save();
+
+
+        //         // Si es un libro nuevo
+        //        //libro.Save();                // Si el libro ya existía
+
+
+
+        //        libro.Close();
+        //        releaseObject(libro);
+
+        //        excel.UserControl = false;
+        //        excel.Quit();
+        //        releaseObject(excel);
+
+
+        //        Thread.Sleep(500);  //No es necesario. Lo he añadido para que dé tiempo a ver el mensaje
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //MessageBox.Show(ex.Message, "Error en creación/actualización del Ejemplo", MessageBoxButton.OK, MessageBoxImage.Error);
+
+        //        libro.Saved = true;
+        //        libro.SaveAs("C:/Users/GerardoDownloads" + @"\Ejemplo.xlsx");
+        //        //    libro.Save();
+
+        //        libro.Close();
+        //        releaseObject(libro);
+
+        //        excel.UserControl = false;
+        //        excel.Quit();
+        //        releaseObject(excel);
+
+        //        System.Threading.Thread.Sleep(2000);
+        //    }
+
+        //}
+
+
+
+
+
+
+
+
+
+        //private void montaCabeceras(int fila, ref Excel._Worksheet hoja)
+        //{
+        //    try
+        //    {
+        //        Excel.Range rango;
+
+        //        //** Montamos el título en la línea 1 **
+        //        hoja.Cells[1, 2] = "EJEMPLO DE CREACIÓN DE UN ARCHIVO EXCEL";
+
+        //        //** Montamos las cabeceras en la línea 3 **
+        //        hoja.Cells[3, 2] = "Nombre completo";
+        //        hoja.Cells[3, 3] = "Telefono";
+        //        hoja.Cells[3, 4] = "Correo";
+        //        hoja.Cells[3, 5] = "Id Cliente";
+        //        hoja.Cells[3, 6] = "Tag";
+        //        hoja.Cells[3, 7] = "Numero Chofer";
+        //        hoja.Cells[3, 8] = "Dias carro";
+        //        hoja.Cells[3, 9] = "Hora Inicio";
+        //        hoja.Cells[3, 10] = "Hora Fin";
+        //        hoja.Cells[3, 11] = "Status";
+        //        hoja.Cells[3, 12] = "Usuario";
+
+        //        //Ponemos borde a las celdas
+        //        rango = hoja.Range["B3", "L3"];
+        //        rango.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
+
+        //        //Centramos los textos
+        //        rango = hoja.Rows[3];
+        //        rango.HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
+
+        //        //Modificamos los anchos de las columnas
+        //        rango = hoja.Columns[1];
+        //        rango.ColumnWidth = 1;
+        //        rango = hoja.Columns[2];
+        //        rango.ColumnWidth = 10;
+        //        rango = hoja.Columns[3];
+        //        rango.ColumnWidth = 20;
+        //        rango = hoja.Columns[4];
+        //        rango.ColumnWidth = 20;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        //MessageBox.Show(ex.Message, "Error de redondeo", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //}
+
+        //private void releaseObject(object obj)
+        //{
+        //    try
+        //    {
+        //        System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+        //        obj = null;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        obj = null;
+        //        //MessageBox.Show("Error mientras liberaba objecto " + ex.ToString());
+        //    }
+        //    finally
+        //    {
+        //        GC.Collect();
+        //    }
+        //}
 
 
 
