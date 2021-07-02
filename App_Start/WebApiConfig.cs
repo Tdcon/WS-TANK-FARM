@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
+using WSTankFarm.App_Start;
+using WSTankFarm.Security;
 
 namespace WSTankFarm
 {
@@ -10,9 +12,13 @@ namespace WSTankFarm
         public static void Register(HttpConfiguration config)
         {
             // Configuración y servicios de API web
-
+            // Web API configuration and services
+            config.EnableCors(new AccessPolicyCors());
+            
             // Rutas de API web
             config.MapHttpAttributeRoutes();
+
+            config.MessageHandlers.Add(new TokenValidationHandler());
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",

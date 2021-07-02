@@ -1,278 +1,45 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using MailKit.Security;
+using MimeKit;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RestSharp;
+using SpreadsheetLight;
+using SpreadsheetLight.Drawing;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web.Mvc;
+using System.Globalization;
 using System.IO;
-using MailKit.Security;
-using MimeKit;
-using System.Security.Cryptography.X509Certificates;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Reflection;
-using System.Globalization;
-using SpreadsheetLight;
-using SpreadsheetLight.Drawing;
-using DocumentFormat.OpenXml.Spreadsheet;
-using Newtonsoft.Json;
-using System.Web.Http.Cors;
-using Newtonsoft.Json.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using RestSharp;
-
-using System.Diagnostics;
+using System.Web.Http;
+using System.Web.Http.Cors;
+using System.Web.Http.Results;
 
 namespace WSTankFarm.Controllers
 {
-   
-    [EnableCors(origins: "*", headers: "*", methods: "*")]
     [Authorize]
-    public class Home2Controller : Controller
+    [RoutePrefix("api/home")]
+    public class HomeController : ApiController
     {
         BDD BD = new BDD();
-        public JsonResult Index()
-        {
-
-            AgregaLog("Prueba log", "TEST METODO");
-            List<Configuracion> lstConfiguracion = new List<Configuracion>();
-            DataTable dT = new DataTable();
-            DataTable dTRol = new DataTable();
-            DataTable dTUser = new DataTable();
-            DataResponse data = new DataResponse();
-            Configuracion ObjConfiguracion = new Configuracion();
-            try
-            {
-                string sSelect = "";
-                string SelectManager = "";
-                string SelectUser = "";
-                int IDRol = 0;
-
-                var Sparam = new SqlParameter();
-                var ArrParametros = new List<SqlParameter>();
-
-
-                /*if (ID != "0")
-                {
-                    sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "] where ID='" + ID + "'";
-                }
-                else
-                {
-                    sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "]";
-                }*/
-                //var bddLocal = GlobalesLocal.BDLocal;
-                sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaConfiguracion + "]";
-
-
-
-
-
-                dT = BD.GetSQL(sSelect, "local", ArrParametros);
-                Sparam = new SqlParameter();
-                ArrParametros = new List<SqlParameter>();
-                var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
-                foreach (DataRow dR1 in dT.Rows)
-                {
-
-
-
-
-                    ObjConfiguracion.ID = dR1["ID"].ToString();
-                    ObjConfiguracion.IPSERVIDOR = dR1["IPSERVIDOR"].ToString();
-                    ObjConfiguracion.IPCONTROLGAS1 = dR1["IPCONTROLGAS1"].ToString();
-                    ObjConfiguracion.IPCONTROLGAS2 = dR1["IPCONTROLGAS2"].ToString();
-                    ObjConfiguracion.IPPLC = dR1["IPPLC"].ToString();
-                    ObjConfiguracion.REPORTESPOR = dR1["REPORTESPOR"].ToString();
-                    ObjConfiguracion.FECHA = Convert.ToDateTime(dR1["FECHA"]).ToString("yyyy-MM-dd");
-
-
-
-                    SelectManager = "select ID,Rol from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaRol + "] where Rol=@Rol";
-                    SqlParameter Sparam2 = new SqlParameter();
-                    ArrParametros = new List<SqlParameter>();
-
-                    List<SqlParameter> list = new List<SqlParameter>();
-                    Sparam2.ParameterName = "@Rol";
-                    Sparam2.Value = "SYSTEM MANAGER";
-                    list.Add(Sparam2);
-
-                    dTRol = BD.GetSQL(SelectManager, "Local", list);
-
-                    foreach (DataRow Rol in dTRol.Rows)
-                    {
-                        IDRol = Convert.ToInt32(Rol["ID"]);
-                        break;
-
-                    }
-                    if (IDRol != 0)
-                    {
-                        var Sparam1 = new SqlParameter();
-                        var ArrParametros1 = new List<SqlParameter>();
-                        Sparam1.ParameterName = "@IdRol";
-                        Sparam1.Value = IDRol;
-                        ArrParametros1.Add(Sparam1);
-                        SelectUser = "select Nombre,Telefono,Correo from [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaUsuarios + "]where IdRol=@IdRol";
-                        dTUser = BD.GetSQL(SelectUser, "Local", ArrParametros1);
-
-                        foreach (DataRow User in dTUser.Rows)
-                        {
-                            ObjConfiguracion.MANAGER = User["Nombre"].ToString();
-                            ObjConfiguracion.TELEFONO = User["Telefono"].ToString();
-                            ObjConfiguracion.CORREO = User["Correo"].ToString();
-                            break;
-
-                        }
-                    }
-                    else
-                    {
-                        ObjConfiguracion.MANAGER = "N/A";
-                        ObjConfiguracion.TELEFONO = "N/A";
-                        ObjConfiguracion.CORREO = "N/A";
-                    }
-
-
-                    lstConfiguracion.Add(ObjConfiguracion);
-                }
-
-                if (lstConfiguracion.Count > 0)
-                {
-                    data.lstConfiguracion = lstConfiguracion;
-                    data.Message = "SUCCESSFUL CONFIGURACION";
-                    data.Status = "OK";
-                }
-                else
-                {
-                    data.lstConfiguracion = lstConfiguracion;
-                    data.Message = "NO DATA FOUND";
-                    data.Status = "OK";
-                }
-                return Json(data, JsonRequestBehavior.AllowGet);
-
-            }
-            catch (Exception e)
-            {
-                var mensaje = new Mensajes();
-                mensaje.Mensaje = e.Message.ToString();
-                mensaje.Status = "Error";
-                AgregaLog("Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "Index");
-                EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "", "", "", "");
-                return Json(data, JsonRequestBehavior.AllowGet);
-            }
-
-        }
-
-
-        // Este metodo es utilizado para insertar LOGS EN LA TABLA LOCAL
-        [HttpPost]
-        public JsonResult wsInsertarLogs(string Descripcion = "")
-        {
-            int DataAfected = 0;
-            DataResponse data = new DataResponse();
-            try
-            {
-
-
-
-                string sSelect = "";
-                sSelect = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO[dbo].[Logs]([Fecha],[Descripcion])VALUES(GETDATE(),@Descripcion)";
-                var Sparam1 = new SqlParameter();
-                var ArrParametros1 = new List<SqlParameter>();
-                Sparam1.ParameterName = "@Descripcion";
-                Sparam1.Value = Descripcion;
-                ArrParametros1.Add(Sparam1);
-
-
-                DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
-                if (DataAfected > 0)
-                {
-
-                    data.Message = "SUCCESSFUL INSERTION";
-                    data.Status = "OK";
-                }
-                else
-                {
-
-                    data.Message = "FAILED INSERTION OF LOGS";
-                    data.Status = "ERROR";
-                }
-
-
-
-
-
-                return Json(data, JsonRequestBehavior.AllowGet);
-
-            }
-            catch (Exception e)
-            {
-                var mensaje = new Mensajes();
-                mensaje.Mensaje = e.Message.ToString();
-                mensaje.Status = "Error";
-                AgregaLog("Ha ocurrido un error en la consulta al Insertar LOG en la base de datos local", "wsInsertarLogs");
-                EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un LOG en la base de datos local", "Ha ocurrido un error en la consulta al Insertar un LOG en la base de datos local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
-            }
-
-
-
-        }
-
-        [HttpPost]
-        public JsonResult GetCosa(Cliente vehiculo)
-        {
-            try
-            {
-
-
-
-                return Json("holiii", JsonRequestBehavior.AllowGet);
-
-            }
-            catch (Exception e)
-            {
-                var mensaje = new Mensajes();
-                mensaje.Mensaje = e.Message.ToString();
-                mensaje.Status = "Error";
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
-            }
-
-
-
-        }
-
-
-        [HttpGet]
-        public string executeCG()
-        {
-            try
-            {
-                var SGMP = "C:/Program Files (x86)/ATIO/SGPMgateway/SGPMgateway.exe";
-
-
-                Process.Start(SGMP);
-
-                return "ok";
-            }
-            catch (Exception e)
-            {
-                var mensaje = new Mensajes();
-                mensaje.Mensaje = e.Message.ToString();
-                mensaje.Status = "Error";
-                return "false";
-
-            }
-
-            return "ok";
-
-        }
+        
 
 
 
         //juan
         // Este metodo es utilizado para actualizar un  DESPACHO en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsUpdateDespachoControlGas(Despacho despacho)
+        
+        [HttpPost] [Route("WsUpdateDespachoControlGas")]
+        public IHttpActionResult WsUpdateDespachoControlGas(Despacho despacho)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -317,9 +84,9 @@ namespace WSTankFarm.Controllers
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@logusu", Value = despacho.logusu });
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@datref", Value = despacho.datref });
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@satuid", Value = despacho.satuid });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@satrfc", Value = despacho.satrfc }); 
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@satrfc", Value = despacho.satrfc });
 
-                 DataAfected = BD.SetSQL(ArrParametros1,sSelect, "ControlGas");
+                DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
                 if (DataAfected > 0)
                 {
 
@@ -332,7 +99,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED INSERTION OF DESPACHOS";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -342,15 +109,15 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar un depacho en control gas", "WsUpdateDespachoControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar un deapacho en control gas", "Ha ocurrido un error en la consulta al actualizar un despacho en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
-
-
-        public JsonResult GetDespachosFiltros(string LastConsum = "", string Producto = "", string Estacion = "", string Company = "", string DriverTag = "", string VehicleTag = "", string Department = "", string Cost = "", string StartDate = "", string EndDate = "", string EST = "")
+        [HttpGet]
+        [Route("GetDespachosFiltros")]
+        public IHttpActionResult  GetDespachosFiltros(string LastConsum = "", string Producto = "", string Estacion = "", string Company = "", string DriverTag = "", string VehicleTag = "", string Department = "", string Cost = "", string StartDate = "", string EndDate = "", string EST = "")
         {
             List<Despacho> lstDespachos = new List<Despacho>();
             DataTable dT = new DataTable();
@@ -644,8 +411,8 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                var json = Json(data, JsonRequestBehavior.AllowGet);
-                json.MaxJsonLength = 500000000;
+                var json = Ok(data);
+                
                 return json;
 
 
@@ -658,7 +425,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Error en la consulta no se pueden obtener los Despachos", "GetDespachosFiltros");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Error en la consulta no se pueden obtener los despachos de la vista", "Error en la consulta no se pueden obtener los despachos de la vista", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -666,8 +433,8 @@ namespace WSTankFarm.Controllers
         }
         //juan
         //// Este metodo es utilizado para insertar un nuevo DESPACHO en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsInsertarDespachoControlGas(Despacho despacho)
+        [HttpPost] [Route("WsInsertarDespachoControlGas")]
+        public IHttpActionResult  WsInsertarDespachoControlGas(Despacho despacho)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -718,7 +485,7 @@ namespace WSTankFarm.Controllers
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@satrfc", Value = despacho.satrfc });
 
 
-                DataAfected = BD.SetSQL(ArrParametros1,sSelect, "ControlGas");
+                DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
                 if (DataAfected > 0)
                 {
 
@@ -731,7 +498,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED INSERTION OF DESPACHOS";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -741,7 +508,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar un deapacho en control gas", "WsInsertarDespachoControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un deapacho en control gas", "Ha ocurrido un error en la consulta al Insertar un deapacho en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -750,8 +517,8 @@ namespace WSTankFarm.Controllers
 
         //juan
         // Este metodo es utilizado para insertar un nuevo PERFIL en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsInsertarPerfil(Perfiles perfiles)
+        [HttpPost] [Route("WsInsertarPerfil")]
+        public IHttpActionResult  WsInsertarPerfil(Perfiles perfiles)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -789,7 +556,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Departamentos", Value = perfiles.Departamentos ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Odometro", Value = perfiles.Odometro ?? (object)DBNull.Value });
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local", perfiles, "WsInsertarPerfil");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", perfiles, "WsInsertarPerfil");
                     if (DataAfected > 0)
                     {
 
@@ -840,7 +607,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@tipoPerfil", Value = perfiles.tipoPerfil ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Departamentos", Value = perfiles.Departamentos ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Odometro", Value = perfiles.Odometro ?? (object)DBNull.Value });
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
                     if (DataAfected > 0)
                     {
 
@@ -861,7 +628,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -871,7 +638,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar un perfil en la base de datos local", "WsInsertarPerfil");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un perfil en la base de datos local", "Ha ocurrido un error en la consulta al Insertar un perfil en la base de datos local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -881,7 +648,8 @@ namespace WSTankFarm.Controllers
 
 
         [HttpGet]
-        public JsonResult GetPerfiles(string id = "0", string all = "", string TipoPerfil = "")
+        [Route("GetPerfiles")]
+        public IHttpActionResult  GetPerfiles(string id = "0", string all = "", string TipoPerfil = "")
         {
             System.Data.DataTable s = new System.Data.DataTable();
             List<Perfiles> lstPerfiles = new List<Perfiles>();
@@ -891,7 +659,7 @@ namespace WSTankFarm.Controllers
             {
                 string sSelect = "";
                 var ArrParametros1 = new List<SqlParameter>();
-                
+
 
                 if (id != "0")
                 {
@@ -982,7 +750,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -1052,7 +820,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1062,7 +830,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los perfiles en la bd local", "GetPerfiles");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener obtener los perfiles en la bd local", "Ha ocurrido un error en la consulta al obtener los perfiles en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1070,8 +838,8 @@ namespace WSTankFarm.Controllers
         }
         //juan
         // Este metodo es utilizado para actualizar un  DESPACHO en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsUpdatePerfil(Perfiles perfiles)
+        [HttpPost] [Route("WsUpdatePerfil")]
+        public IHttpActionResult  WsUpdatePerfil(Perfiles perfiles)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -1106,7 +874,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Odometro", Value = perfiles.Odometro ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = perfiles.ID });
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local", perfiles, "WsUpdatePerfil");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", perfiles, "WsUpdatePerfil");
                     if (DataAfected > 0)
                     {
 
@@ -1149,7 +917,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Departamentos", Value = perfiles.Departamentos ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Odometro", Value = perfiles.Odometro ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = perfiles.ID });
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
                     if (DataAfected > 0)
                     {
 
@@ -1165,7 +933,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1175,7 +943,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar un PERFIL en la BD local", "WsUpdatePerfil");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  un PERFIL en la BD local", "Ha ocurrido un error en la consulta al actualizar un PERFIL en la BD local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1184,9 +952,8 @@ namespace WSTankFarm.Controllers
 
         // Este metodo es utilizado para insertar un nuevo centro de costos  en la base de datos de tank farm
         //juan
-        [HttpPost]
-        [Authorize]
-        public JsonResult WsInsertarCentroCostos(CentroCostos centroCostos)
+        [HttpPost] [Route("WsInsertarCentroCostos")]
+        public IHttpActionResult  WsInsertarCentroCostos(CentroCostos centroCostos)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -1206,7 +973,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@idDepartamento", Value = centroCostos.idDepartamento });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@nameCentro", Value = centroCostos.nameCentro });
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local", centroCostos, "WsInsertarCentroCostos");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", centroCostos, "WsInsertarCentroCostos");
                     if (DataAfected > 0)
                     {
 
@@ -1226,11 +993,11 @@ namespace WSTankFarm.Controllers
                 {
                     string sSelect = "";
                     var ArrParametros1 = new List<SqlParameter>();
-                    
+
                     sSelect = "USE [" + GlobalesLocal.BDLocal + "] DECLARE @MAXID int; SELECT @MAXID=(SELECT MAX(id+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaCentroCostos + "])IF @MAXID >0 SELECT @MAXID=(SELECT MAX(id+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaCentroCostos + "])   ELSE set @MAXID=1 INSERT INTO [dbo].[" + GlobalesLocal.TablaCentroCostos + "] (id,idDepartamento ,nameCentro,status) VALUES (@MAXID,'" + centroCostos.idDepartamento + "', '" + centroCostos.nameCentro + "',0) ";
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@idDepartamento", Value = centroCostos.idDepartamento });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@nameCentro", Value = centroCostos.nameCentro });
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
                     if (DataAfected > 0)
                     {
 
@@ -1247,7 +1014,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1257,7 +1024,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar un centro de costos en la base de datos local", "WsInsertarCentroCostos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un centro de costos en la base de datos local", "Ha ocurrido un error en la consulta al Insertar un centro de costos en la base de datos local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1265,8 +1032,8 @@ namespace WSTankFarm.Controllers
         }
 
         //juan
-        [HttpGet]
-        public JsonResult GetCentroCostos(string idDepartamento = "0", string all = "")
+        [HttpGet] [Route("GetCentroCostos")]
+        public IHttpActionResult  GetCentroCostos(string idDepartamento = "0", string all = "")
         {
             System.Data.DataTable s = new System.Data.DataTable();
             List<CentroCostos> lstCentroCostos = new List<CentroCostos>();
@@ -1276,8 +1043,8 @@ namespace WSTankFarm.Controllers
             {
                 string sSelect = "";
                 var ArrParametros1 = new List<SqlParameter>();
-                
-                if (idDepartamento != "0" && idDepartamento != "" && all == "")
+
+                if ( all == "" || all == null && idDepartamento != "0" && idDepartamento != "")
                 {
                     sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaCentroCostos + "] where " +
                         "idDepartamento=@idDepartamento and Status<>-1 order by id desc";
@@ -1306,7 +1073,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -1332,7 +1099,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1342,7 +1109,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener CENTROS DE COSTOS en la bd local", "GetCentroCostos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener obtener CENTROS DE COSTOS en la bd local", "Ha ocurrido un error en la consulta al obtener CENTROS DE COSTOS en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1350,8 +1117,8 @@ namespace WSTankFarm.Controllers
         }
 
         // Este metodo es utilizado para actualizar un  DESPACHO en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsUpdateCentroCostos(CentroCostos centroCostos)
+        [HttpPost] [Route("WsUpdateCentroCostos")]
+        public IHttpActionResult  WsUpdateCentroCostos(CentroCostos centroCostos)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -1371,7 +1138,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = centroCostos.id });
 
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local", centroCostos, "WsUpdateCentroCostos");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local", centroCostos, "WsUpdateCentroCostos");
                     if (DataAfected > 0)
                     {
 
@@ -1398,7 +1165,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@idDepartamento", Value = centroCostos.idDepartamento ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@nameCentro", Value = centroCostos.nameCentro ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = centroCostos.id });
-                    DataAfected = BD.SetSQL( ArrParametros1,sSelect, "Local");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
                     if (DataAfected > 0)
                     {
 
@@ -1414,7 +1181,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1424,15 +1191,15 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar un CENTRO DE COSTOS en la BD local", "WsUpdateCentroCostos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  UN CENTRO DE COSTOS  en la BD local", "Ha ocurrido un error en la consulta al actualizar un  CENTRO DE COSTOS en la BD local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-        [HttpPost]
-        public JsonResult GetUserID(DatosUsuario user)
+        [HttpGet] [Route("GetUserID")]
+        public IHttpActionResult  GetUserID(DatosUsuario user)
         {
             try
             {
@@ -1447,14 +1214,14 @@ namespace WSTankFarm.Controllers
 
                 if (RFID == user.RFID)
                 {
-                    return Json(user, JsonRequestBehavior.AllowGet);
+                    return Ok(user);
                 }
                 else
                 {
                     var mensaje = new Mensajes();
                     mensaje.Mensaje = "User was not found, Please try a valid User";
                     mensaje.Status = "Error";
-                    return Json(mensaje, JsonRequestBehavior.AllowGet);
+                    return Ok(mensaje);
                 }
 
             }
@@ -1463,14 +1230,14 @@ namespace WSTankFarm.Controllers
                 var mensaje = new Mensajes();
                 mensaje.Mensaje = e.Message.ToString();
                 mensaje.Status = "Error";
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
-        [HttpPost]
-        public JsonResult GetCarID(DatosVehiculo car)
+        [HttpGet] [Route("GetCarID")]
+        public IHttpActionResult  GetCarID(DatosVehiculo car)
         {
             try
             {
@@ -1483,14 +1250,14 @@ namespace WSTankFarm.Controllers
                 if (Tag == car.Tag)
                 {
 
-                    return Json(car, JsonRequestBehavior.AllowGet);
+                    return Ok(car);
                 }
                 else
                 {
                     var mensaje = new Mensajes();
                     mensaje.Mensaje = "The Car was not found, Please try a valid Car";
                     mensaje.Status = "Error";
-                    return Json(mensaje, JsonRequestBehavior.AllowGet);
+                    return Ok(mensaje);
                 }
 
             }
@@ -1499,7 +1266,7 @@ namespace WSTankFarm.Controllers
                 var mensaje = new Mensajes();
                 mensaje.Mensaje = e.Message.ToString();
                 mensaje.Status = "Error";
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1510,7 +1277,7 @@ namespace WSTankFarm.Controllers
         //juan
         [HttpGet]
         [Route("GetClientes")]
-        public JsonResult GetClientes(string id = "0", string all = "")
+        public IHttpActionResult  GetClientes(string id = "0", string all = "")
         {
 
             System.Data.DataTable s = new System.Data.DataTable();
@@ -1525,7 +1292,7 @@ namespace WSTankFarm.Controllers
                 {
 
                     sSelect = "select  * from  [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientes + "] where cod=@ID order by cod desc";
-                    
+
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = id });
 
                 }
@@ -1548,7 +1315,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -1654,7 +1421,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1664,7 +1431,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los clientes en control gas", "GetClientes");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los clientes en control gas", "Ha ocurrido un error en la consulta al obtener los clientes en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -1674,8 +1441,8 @@ namespace WSTankFarm.Controllers
 
         //juan
         // Este metodo es utilizado para insertar un nuevo CLIENTE en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsInsertarClienteControlGas(Cliente cliente)
+        [HttpPost] [Route("WsInsertarClienteControlGas")]
+        public IHttpActionResult  WsInsertarClienteControlGas(Cliente cliente)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -1785,7 +1552,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@codrefban", Value = cliente.codrefban });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@paisat", Value = cliente.paisat ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@satuso", Value = cliente.satuso ?? (object)DBNull.Value });
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "ControlGas", cliente, "WsInsertarClienteControlGas");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas", cliente, "WsInsertarClienteControlGas");
 
                     if (DataAfected > 0)
                     {
@@ -1826,88 +1593,88 @@ namespace WSTankFarm.Controllers
 
                     var ArrParametros1 = new List<SqlParameter>();
 
-                    
+
 
 
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@den", Value = cliente.den ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@col", Value = cliente.col   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@del", Value = ""   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ciu", Value = cliente.ciu   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@est", Value = cliente.est   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tel", Value = cliente.tel   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@fax", Value = cliente.fax   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@rfc", Value = cliente.rfc   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tipval", Value = cliente.tipval  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtoasg", Value = cliente.mtoasg  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtodis", Value = cliente.mtodis  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtorep", Value = cliente.mtorep  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cndpag", Value = cliente.cndpag  });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@col", Value = cliente.col ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@del", Value = "" ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ciu", Value = cliente.ciu ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@est", Value = cliente.est ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tel", Value = cliente.tel ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@fax", Value = cliente.fax ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@rfc", Value = cliente.rfc ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tipval", Value = cliente.tipval });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtoasg", Value = cliente.mtoasg });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtodis", Value = cliente.mtodis });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@mtorep", Value = cliente.mtorep });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cndpag", Value = cliente.cndpag });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@diarev", Value = cliente.diarev });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@horrev", Value = cliente.horrev ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@diapag", Value = cliente.diapag    });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@diapag", Value = cliente.diapag });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@horpag", Value = cliente.horpag ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cto", Value = cliente.cto   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@obs", Value = cliente.obs   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@dom", Value = cliente.dom   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@datcon", Value = cliente.datcon    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codpos", Value = cliente.codpos   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptosdo", Value = cliente.ptosdo    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@pto", Value = cliente.pto   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debsdo", Value = cliente.debsdo   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cresdo", Value = cliente.cresdo    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@fmtexp", Value = cliente.fmtexp    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@arcexp", Value = cliente.arcexp   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@polcor", Value = cliente.polcor   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ultcor", Value = cliente.ultcor   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debnro", Value = cliente.debnro  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@crenro", Value = cliente.crenro   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debglo", Value = cliente.debglo    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codtip", Value = cliente.codtip    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codzon", Value = cliente.codzon  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codgrp", Value = cliente.codgrp   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codest", Value = cliente.codest  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@logusu", Value = cliente.logusu   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@pai", Value = cliente.pai   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@correo", Value = cliente.correo   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@dattik", Value = cliente.dattik  });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptodebacu", Value = cliente.ptodebacu    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptodebfch", Value = cliente.ptodebfch   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptocreacu", Value = cliente.ptocreacu   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptocrefch", Value = cliente.ptocrefch    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptovenacu", Value = cliente.ptovenacu    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptovenfch", Value = cliente.ptovenfch    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@domnroext", Value = cliente.domnroext   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@domnroint", Value = cliente.domnroint   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@datvar", Value = cliente.datvar   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@nroctapag", Value = cliente.nroctapag   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tipopepag", Value = cliente.tipopepag    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cveest", Value = cliente.cveest   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cvetra", Value = cliente.cvetra   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geodat", Value = cliente.geodat   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geolat", Value = cliente.geolat    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geolng", Value = cliente.geolng    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@taxext", Value = cliente.taxext    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@taxextid", Value = cliente.taxextid   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1cod", Value = cliente.bcomn1cod   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1den", Value = cliente.bcomn1den   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1cta", Value = cliente.bcomn1cta   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2cod", Value = cliente.bcomn2cod   });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2den", Value = cliente.bcomn2den   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2cta", Value = cliente.bcomn2cta    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1cod", Value = cliente.bcome1cod    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1den", Value = cliente.bcome1den   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1cta", Value = cliente.bcome1cta   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2cod", Value = cliente.bcome2cod    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2den", Value = cliente.bcome2den   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2cta", Value = cliente.bcome2cta   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfis", Value = cliente.perfis    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisnom", Value = cliente.perfisnom   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisapp", Value = cliente.perfisapp   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisapm", Value = cliente.perfisapm   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@curp", Value = cliente.curp   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codrefban", Value = cliente.codrefban    });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@paisat", Value = cliente.paisat   ?? (object)DBNull.Value });
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@satuso", Value = cliente.satuso   ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cto", Value = cliente.cto ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@obs", Value = cliente.obs ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@dom", Value = cliente.dom ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@datcon", Value = cliente.datcon });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codpos", Value = cliente.codpos ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptosdo", Value = cliente.ptosdo });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@pto", Value = cliente.pto });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debsdo", Value = cliente.debsdo });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cresdo", Value = cliente.cresdo });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@fmtexp", Value = cliente.fmtexp });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@arcexp", Value = cliente.arcexp ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@polcor", Value = cliente.polcor });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ultcor", Value = cliente.ultcor });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debnro", Value = cliente.debnro });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@crenro", Value = cliente.crenro });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@debglo", Value = cliente.debglo });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codtip", Value = cliente.codtip });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codzon", Value = cliente.codzon });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codgrp", Value = cliente.codgrp });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codest", Value = cliente.codest });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@logusu", Value = cliente.logusu });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@pai", Value = cliente.pai ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@correo", Value = cliente.correo ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@dattik", Value = cliente.dattik });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptodebacu", Value = cliente.ptodebacu });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptodebfch", Value = cliente.ptodebfch });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptocreacu", Value = cliente.ptocreacu });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptocrefch", Value = cliente.ptocrefch });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptovenacu", Value = cliente.ptovenacu });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@ptovenfch", Value = cliente.ptovenfch });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@domnroext", Value = cliente.domnroext ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@domnroint", Value = cliente.domnroint ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@datvar", Value = cliente.datvar });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@nroctapag", Value = cliente.nroctapag ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@tipopepag", Value = cliente.tipopepag });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cveest", Value = cliente.cveest ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cvetra", Value = cliente.cvetra ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geodat", Value = cliente.geodat ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geolat", Value = cliente.geolat });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@geolng", Value = cliente.geolng });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@taxext", Value = cliente.taxext });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@taxextid", Value = cliente.taxextid ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1cod", Value = cliente.bcomn1cod });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1den", Value = cliente.bcomn1den ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn1cta", Value = cliente.bcomn1cta ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2cod", Value = cliente.bcomn2cod });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2den", Value = cliente.bcomn2den ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcomn2cta", Value = cliente.bcomn2cta });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1cod", Value = cliente.bcome1cod });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1den", Value = cliente.bcome1den ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome1cta", Value = cliente.bcome1cta ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2cod", Value = cliente.bcome2cod });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2den", Value = cliente.bcome2den ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@bcome2cta", Value = cliente.bcome2cta ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfis", Value = cliente.perfis });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisnom", Value = cliente.perfisnom ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisapp", Value = cliente.perfisapp ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@perfisapm", Value = cliente.perfisapm ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@curp", Value = cliente.curp ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@codrefban", Value = cliente.codrefban });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@paisat", Value = cliente.paisat ?? (object)DBNull.Value });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@satuso", Value = cliente.satuso ?? (object)DBNull.Value });
                     DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
 
                     if (DataAfected > 0)
@@ -1933,7 +1700,7 @@ namespace WSTankFarm.Controllers
                     }
 
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -1943,12 +1710,13 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar los clientes en control gas", "WsInsertarClienteControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar los clientes en control gas", "Ha ocurrido un error en la consulta al Insertar los clientes en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
+        [Route("WSInsertarClientesGasolineras")]
         public int WSInsertarClientesGasolineras(string Descripcion)
         {
             int DataAfected = 0;
@@ -1972,7 +1740,7 @@ namespace WSTankFarm.Controllers
                 " VALUES (@codClie,0 ,0 ,1 ,GETDATE())";
             var ArrParametros2 = new List<SqlParameter>();
             ArrParametros2.Add(new SqlParameter { ParameterName = "@codClie", Value = codClie });
-            DataAfected = BD.SetSQL(ArrParametros2,sSelect, "ControlGas");
+            DataAfected = BD.SetSQL(ArrParametros2, sSelect, "ControlGas");
 
             if (DataAfected > 0)
             {
@@ -2042,8 +1810,8 @@ namespace WSTankFarm.Controllers
 
 
         // Este metodo es utilizado para actualizar un  CLIENTE en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsUpdateClienteControlGas(Cliente cliente)
+        [HttpPost] [Route("WsUpdateClienteControlGas")]
+        public IHttpActionResult  WsUpdateClienteControlGas(Cliente cliente)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -2053,9 +1821,9 @@ namespace WSTankFarm.Controllers
                 {
 
                     string sSelect = "";
-                    
+
                     sSelect = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "] UPDATE [dbo].[" + GlobalesCorporativo.TablaClientes + "]  SET [den] =@den ,[dom] =@dom ," +
-                        "[col] = @col ,[del] = @del ,[ciu] = @ciu ,[est] = @est ,[tel] = @tel ,[fax] = @fax ,[rfc] = @rfc ,[tipval] = @tipval ,[mtoasg] = @mtoasg ,[mtodis] = @mtodis ,[mtorep] = @mtorep, "+
+                        "[col] = @col ,[del] = @del ,[ciu] = @ciu ,[est] = @est ,[tel] = @tel ,[fax] = @fax ,[rfc] = @rfc ,[tipval] = @tipval ,[mtoasg] = @mtoasg ,[mtodis] = @mtodis ,[mtorep] = @mtorep, " +
                         "[cndpag] = @cndpag ,[diarev] =@diarev ,[horrev] = @horrev,[diapag] = @diapag ,[horpag] = @horpag,[cto] = @cto ,[obs] = @obs ,[datcon] = @datcon ,[codpos] = @codpos ,[pto] = @pto ," +
                         "[ptosdo] = @ptosdo ,[debsdo] = @debsdo ,[cresdo] = @cresdo ,[fmtexp] = @fmtexp,[arcexp] = @arcexp ,[polcor] =@polcor ,[ultcor] = @ultcor ,[debnro] = @debnro ,[crenro] = @crenro ,[debglo] = @debglo ," +
                         "[codtip] = @codtip ,[codzon] = @codzon ,[codgrp] = @codgrp ,[codest] = @codest ,[logusu] =@logusu ,[logfch] = GETDATE() ,[lognew] = GETDATE() ,[pai] = @pai ,[correo] = @correo ,[dattik] = @dattik ," +
@@ -2069,7 +1837,7 @@ namespace WSTankFarm.Controllers
                         "[perfis] = @perfis ,[perfisnom] = @perfisnom ,[perfisapp] = @perfisapp  ,[perfisapm] = @perfisapm ," +
                         "[curp] = @curp  ,[codrefban] = @codrefban  ,[paisat] = @paisat  ,[satuso] = @satuso  WHERE cod =@cod ";
                     var ArrParametros1 = new List<SqlParameter>();
-                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cod", Value = cliente.cod  });
+                    ArrParametros1.Add(new SqlParameter { ParameterName = "@cod", Value = cliente.cod });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@den", Value = cliente.den ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@col", Value = cliente.col ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@del", Value = "" ?? (object)DBNull.Value });
@@ -2150,7 +1918,7 @@ namespace WSTankFarm.Controllers
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@paisat", Value = cliente.paisat ?? (object)DBNull.Value });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@satuso", Value = cliente.satuso ?? (object)DBNull.Value });
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "ControlGas", cliente, "WsUpdateClienteControlGas");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas", cliente, "WsUpdateClienteControlGas");
                     if (DataAfected > 0)
                     {
 
@@ -2270,7 +2038,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "ControlGas");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "ControlGas");
 
                     if (DataAfected > 0)
                     {
@@ -2287,7 +2055,7 @@ namespace WSTankFarm.Controllers
                 }
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -2297,7 +2065,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar clientes en control gas", "WsUpdateClienteControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar clientes en control gas", "Ha ocurrido un error en la consulta al actualizar clientes en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -2307,8 +2075,8 @@ namespace WSTankFarm.Controllers
 
         //juan
         // Este metodo es utilizado para deshabilitar  un  cliente del sistema 
-        [HttpGet]
-        public JsonResult WsDisabledCustomer(string cod = "0")
+        [HttpPost] [Route("WsDisabledCustomer")]
+        public IHttpActionResult  WsDisabledCustomer(string cod = "0")
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -2321,7 +2089,7 @@ namespace WSTankFarm.Controllers
                 sSelectLocaL = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "] Update [dbo].[" + GlobalesCorporativo.TablaClientes + "]  set codest='1' WHERE cod=@cod";
                 var ArrParametros1 = new List<SqlParameter>();
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@cod", Value = cod });
-                DataAfectedLocal = BD.SetSQL(ArrParametros1,sSelectLocaL, "ControlGas");
+                DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "ControlGas");
 
                 if (DataAfectedLocal > 0)
                 {
@@ -2337,7 +2105,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -2347,7 +2115,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al deshabilitar un cliente", "WsDisabledCustomer");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al deshabilitar un cliente", "Ha ocurrido un error en la consulta al deshabilitar un cliente", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -2355,16 +2123,9 @@ namespace WSTankFarm.Controllers
         }
 
 
-
-
-
-
-
-
-
         // Este metodo es utilizado para insertar un nuevo departamento en la base de de datos local
-        [HttpPost]
-        public JsonResult WsInsertarDepartamentos(Departamentos departamentos)
+        [HttpPost] [Route("WsInsertarDepartamentos")]
+        public IHttpActionResult  WsInsertarDepartamentos(Departamentos departamentos)
         {
 
             int DataAfected = 0;
@@ -2408,7 +2169,7 @@ namespace WSTankFarm.Controllers
                     sSelect = "USE [" + GlobalesLocal.BDLocal + "] DECLARE @MAXID int; SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaDepartamento + "])IF @MAXID >0 SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaDepartamento + "])   ELSE set @MAXID=1 INSERT INTO [dbo].[" + GlobalesLocal.TablaDepartamento + "] ([ID],[Departamento],[Status])VALUES(@MAXID, @Departamento,1)";
                     var ArrParametros1 = new List<SqlParameter>();
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Departamento", Value = departamentos.Departamento });
-                    DataAfected = BD.SetSQL(ArrParametros1,sSelect, "Local");
+                    DataAfected = BD.SetSQL(ArrParametros1, sSelect, "Local");
 
                     if (DataAfected > 0)
                     {
@@ -2426,7 +2187,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -2436,30 +2197,16 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar un departamento en la bd local", "WsInsertarDepartamentos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un departamento en la bd local", "Ha ocurrido un error en la consulta al Insertar un departamento en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-     
-
-
-
-
-
-
-
-
-
         // Este metodo es utilizado para insertar un nuevo chofer en la base de datos local
-        [HttpPost]
-        public JsonResult WsInsertarChofer(Choferes choferes)
+        [HttpPost] [Route("WsInsertarChofer")]
+        public IHttpActionResult  WsInsertarChofer(Choferes choferes)
         {
             var F = "";
             int DataAfectedLocal = 0;
@@ -2467,7 +2214,7 @@ namespace WSTankFarm.Controllers
             DataResponse data = new DataResponse();
             DataTable dT = new DataTable();
             //**********************************************************************
-           
+
             //**********************************************************************
 
             try
@@ -2492,7 +2239,7 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "FAILED TAG ALREADY EXISTS";
                         data.Status = "DUPLICATE";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
 
                     }
                     //**********************************************************************
@@ -2569,11 +2316,11 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "FAILED TAG ALREADY EXISTS";
                         data.Status = "DUPLICATE";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
 
                     }
                     //**********************************************************************
-                   var ArrParametros4 = new List<SqlParameter>();
+                    var ArrParametros4 = new List<SqlParameter>();
                     //sSelecTTankFarm = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "] INSERT INTO [dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] ([codcli] ,[nrocho] ,[den] ,[diacar] ,[hraini] ,[hrafin] ,[tag] ,[codest] ,[logusu] ,[logfch]) VALUES ('" + choferes.codcli + "', (SELECT nro=( CASE WHEN MAX(nrocho+1)>1 THEN (SELECT MAX(nrocho+1) as nrocho FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] where codcli='" + choferes.codcli + "') ELSE 1 END) FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] where codcli='" + choferes.codcli + "'), '" + choferes.den + "', '" + choferes.diacar + "', '" + choferes.hraini + "', '" + choferes.hrafin + "', '" + choferes.tag + "', 0, 0, GETDATE())";
                     sSelecTTankFarm = "USE [" + GlobalesCorporativo.BDCorporativoModerno + "] INSERT INTO [dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] ([codcli] ,[nrocho] ,[den] ,[diacar] ,[hraini] ,[hrafin] ,[tag] ,[codest] ,[logusu] ,[logfch]) VALUES (@CodCli, (SELECT nro=( CASE WHEN MAX(nrocho+1)>1 THEN (SELECT MAX(nrocho+1) as nrocho FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] where codcli=@CodCli) ELSE 1 END) FROM [" + GlobalesCorporativo.BDCorporativoModerno + "].[dbo].[" + GlobalesCorporativo.TablaClientesChoferes + "] where codcli=@CodCli), @Den, @DiaCar, @HraIni,@HraFin,@Tag, 0, 0, GETDATE())";
                     //[codcli] ,[nrocho] ,[den] ,[diacar] ,[hraini] ,[hrafin] ,[tag] ,[codest] ,[logusu] ,[logfch]
@@ -2593,7 +2340,7 @@ namespace WSTankFarm.Controllers
                         var nombreConcatenado = choferes.Nombre + choferes.LastName + choferes.SecondLastName;
                         nombreConcatenado = nombreConcatenado.Replace(" ", "");
                         //**********************************************************************
-                       var ArrParametros5 = new List<SqlParameter>();
+                        var ArrParametros5 = new List<SqlParameter>();
                         //sSelectLocaL = " USE [" + GlobalesLocal.BDLocal + "]  DECLARE @MAXID int; SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "])IF @MAXID >0 SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "])   ELSE set @MAXID=1 INSERT INTO [dbo].[" + GlobalesLocal.TablaChoferes + "]  ([ID],[Nombre] ,[Telefono] ,[IdCliente] ,[IdIdioma] ,[Gerente] ,[Correo], [Perfil] ,[Tag] ,[Status],[LastName], [SecondLastName], [Departamento], [CentroCostos],[NameComplete]) VALUES (@MAXID,'" + choferes.Nombre + "', '" + choferes.Telefono + "', '" + choferes.codcli + "', '" + choferes.IdIdioma + "', '" + choferes.Gerente + "', '" + choferes.Correo + "','" + choferes.Perfil + "', '" + choferes.tag + "', 0,'" + choferes.LastName + "','" + choferes.SecondLastName + "','" + choferes.Departamento + "','" + choferes.CentroCostos + "','" + nombreConcatenado + "')";
                         sSelectLocaL = " USE [" + GlobalesLocal.BDLocal + "]  DECLARE @MAXID int; SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "])IF @MAXID >0 SELECT @MAXID=(SELECT MAX(ID+1) AS id FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaChoferes + "])   ELSE set @MAXID=1 INSERT INTO [dbo].[" + GlobalesLocal.TablaChoferes + "]  ([ID],[Nombre] ,[Telefono] ,[IdCliente] ,[IdIdioma] ,[Gerente] ,[Correo], [Perfil] ,[Tag] ,[Status],[LastName], [SecondLastName], [Departamento], [CentroCostos],[NameComplete]) VALUES (@MAXID,@Nombre,@Telefono,@IdCliente,@IdIdioma,@Gerente,@Correo,@Perfil,@Tag, 0,@LastName,@SecondLastName,@Departamento,@CentroCostos,@NombreConcatenado)";
                         ArrParametros5.Add(new SqlParameter { ParameterName = "@Nombre", Value = choferes.Nombre ?? (object)DBNull.Value });
@@ -2634,7 +2381,7 @@ namespace WSTankFarm.Controllers
                     }
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -2645,29 +2392,15 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar un chofer", "WsInsertarChofer");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar un chofer", "Ha ocurrido un error en la consulta al Insertar un chofer", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public JsonResult GetVehiculos(string id = "0", string tag = "0", string all = "")
+        [Route("GetVehiculos")]
+        public IHttpActionResult  GetVehiculos(string id = "0", string tag = "0", string all = "")
 
         {
             List<Vehiculo> lstVehiculos = new List<Vehiculo>();
@@ -2740,7 +2473,7 @@ namespace WSTankFarm.Controllers
                 dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros);
                 //**********************************************************************
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -2903,7 +2636,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -2913,33 +2646,16 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los vehiculos", "GetVehiculos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los vehiculos", "Ha ocurrido un error en la consulta al obtener los vehiculos", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         //Este ws es utilizado para actualizar un vehiculo en la base de datos de control Gas
-        [HttpPost]
-        public JsonResult WsUpdateVehiculoControlGas(Vehiculo vehiculos)
+        [HttpPost] [Route("WsUpdateVehiculoControlGas")]
+        public IHttpActionResult  WsUpdateVehiculoControlGas(Vehiculo vehiculos)
         {
 
             //**********************************************************************
@@ -3164,7 +2880,7 @@ namespace WSTankFarm.Controllers
                     }
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3174,38 +2890,16 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar lo vehiculos en control gas", "WsUpdateVehiculoControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar lo vehiculos en control gas", "Ha ocurrido un error en la consulta al actualizar lo vehiculos en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // Este metodo es utilizado para insertar un nuevo vehiculo en la base de datos de tank farm
-        [HttpPost]
-        public JsonResult WsInsertarVehiculoControlGas(Vehiculo vehiculos)
+        [HttpPost] [Route("WsInsertarVehiculoControlGas")]
+        public IHttpActionResult  WsInsertarVehiculoControlGas(Vehiculo vehiculos)
         {
 
             int DataAfected = 0;
@@ -3428,7 +3122,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3438,26 +3132,16 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar los vehiculos en cntrol gas", "WsInsertarVehiculoControlGas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar los vehiculos en control gas", "Ha ocurrido un error en la consulta al Insertar los vehiculos en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
         // Este metodo es utilizado para deshabilitar  un  chofer del sistema
-        [HttpGet]
-        public JsonResult WsDisabledChofer(string tag = "0")
+        [HttpPost] [Route("WsDisabledChofer")]
+        public IHttpActionResult  WsDisabledChofer(string tag = "0")
         {
             int DataAfectedLocal = 0;
             int DataAfectedTankFarm = 0;
@@ -3505,7 +3189,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3515,26 +3199,16 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al deshabilitar un chofer", "WsDisabledChofer");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al deshabilitar un chofer", "Ha ocurrido un error en la consulta al deshabilitar un chofer", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
         // Este metodo es utilizado para deshabilitar  un  vehicle del sistema 
-        [HttpGet]
-        public JsonResult WsDisabledVehicle(string tag = "0")
+        [HttpPost] [Route("WsDisabledVehicle")]
+        public IHttpActionResult  WsDisabledVehicle(string tag = "0")
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -3566,7 +3240,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3576,7 +3250,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al deshabilitar un vehiculo", "WsDisabledVehicle");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al deshabilitar un vehiculo", "Ha ocurrido un error en la consulta al deshabilitar un vehiculo", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -3586,8 +3260,8 @@ namespace WSTankFarm.Controllers
 
 
         // Este metodo es utilizado para dehabilitar un departamento en la base de de datos local
-        [HttpGet]
-        public JsonResult WsStatusChangue(ChangueStatus changuestatus)
+        [HttpPost] [Route("WsStatusChangue")]
+        public IHttpActionResult  WsStatusChangue(ChangueStatus changuestatus)
         {
             int DataAfected = 0;
             //ChangueStatus changestatus = new ChangueStatus();
@@ -3605,8 +3279,8 @@ namespace WSTankFarm.Controllers
                     if (changuestatus.ID != "" && changuestatus.ID != "0")
                     {
                         sSelect = $"UPDATE [dbo].{changuestatus.table} SET {changuestatus.nameStatus} = @Status WHERE {changuestatus.nameid} = @ID";
-                       
-                        
+
+
                         ArrParametros.Add(new SqlParameter { ParameterName = "@Status", Value = changuestatus.Status });
                         ArrParametros.Add(new SqlParameter { ParameterName = "@ID", Value = changuestatus.ID });
 
@@ -3616,7 +3290,7 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "DATA EMPTY";
                         data.Status = "ERROR";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
                     }
 
 
@@ -3649,7 +3323,7 @@ namespace WSTankFarm.Controllers
                         //**********************************************************************
                         ArrParametros = new List<SqlParameter>();
                         sSelect = $"UPDATE [dbo].{changuestatus.table} SET {changuestatus.nameStatus} = @Status WHERE  {changuestatus.nameid} = @ID";
-                                    
+
                         ArrParametros.Add(new SqlParameter { ParameterName = "@Status", Value = changuestatus.Status });
                         ArrParametros.Add(new SqlParameter { ParameterName = "@ID", Value = changuestatus.ID });
 
@@ -3658,7 +3332,7 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "DATA EMPTY";
                         data.Status = "ERROR";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
                     }
 
                     DataAfected = BD.SetSQL(ArrParametros, sSelect, changuestatus.BDD);
@@ -3680,7 +3354,7 @@ namespace WSTankFarm.Controllers
                 }
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3690,7 +3364,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al deshabilitar o habilitar  un " + changuestatus.table + " en la bd local", "WsStatusChangue");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al deshabilitar o habilitar un " + changuestatus.table + " en la bd local", "Ha ocurrido un error en la consulta al deshabilitar o habilitar un " + changuestatus.table + " en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -3698,19 +3372,9 @@ namespace WSTankFarm.Controllers
         }
 
 
-
-
-
-
-
-
-
-
-
-
         // Este metodo es utilizado para actualizar un departamento en la base de de datos local
-        [HttpPost]
-        public JsonResult WsUpdateDepartamentos(Departamentos departamentos)
+        [HttpPost] [Route("WsUpdateDepartamentos")]
+        public IHttpActionResult  WsUpdateDepartamentos(Departamentos departamentos)
         {
             //**********************************************************************
             var ArrParametros = new List<SqlParameter>();
@@ -3781,7 +3445,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3791,26 +3455,17 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar un departamento en la bd local", "WsUpdateDepartamentos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar un departamento en la bd local", "Ha ocurrido un error en la consulta al actualizar un departamento en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
-
         //Este ws es para obtener los departamentos de la bd de datos local
         [HttpGet]
-        public JsonResult GetDepartamentos(string id = "0", string all = "")
+        [Route("GetDepartamentos")]
+        public IHttpActionResult  GetDepartamentos(string id = "0", string all = "")
         {
             System.Data.DataTable s = new System.Data.DataTable();
             List<Departamentos> lstDep = new List<Departamentos>();
@@ -3849,7 +3504,7 @@ namespace WSTankFarm.Controllers
                 //**********************************************************************
 
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -3876,7 +3531,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -3886,27 +3541,18 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los departamentos de la base de datos local", "GetDepartamentos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los departamentos de la base de datos local", "Ha ocurrido un error en la consulta al obtener los departamentos de la base de datos local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
-
-
-
-
-
         //gera
 
         // Este metodo es utilizado para actualizar un  chofer en la base de datos local y de tank farm
-        [HttpPost]
-        public JsonResult WsUpdateChofer(Choferes choferes)
+        [HttpPost] [Route("WsUpdateChofer")]
+        public IHttpActionResult  WsUpdateChofer(Choferes choferes)
         {
             int DataAfectedLocal = 0;
             int DataAfectedTankFarm = 0;
@@ -3934,7 +3580,7 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "FAILED TAG ALREADY EXISTS";
                         data.Status = "DUPLICATE";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
 
                     }
 
@@ -4019,7 +3665,7 @@ namespace WSTankFarm.Controllers
                     {
                         data.Message = "FAILED TAG ALREADY EXISTS";
                         data.Status = "DUPLICATE";
-                        return Json(data, JsonRequestBehavior.AllowGet);
+                        return Ok(data);
 
                     }
 
@@ -4079,7 +3725,7 @@ namespace WSTankFarm.Controllers
 
                     }
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4089,7 +3735,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar choferes", "WsUpdateChofer");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar choferes", "Ha ocurrido un error en la consulta al actualizar choferes", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4097,7 +3743,8 @@ namespace WSTankFarm.Controllers
         }
 
         //gera
-        public JsonResult GetChoferes(string codcli = "0", string tag = "0", string all = "")
+        [Route("GetChoferes")]
+        public IHttpActionResult  GetChoferes(string codcli = "0", string tag = "0", string all = "")
         {
             List<Choferes> lstChoferes = new List<Choferes>();
             DataTable dT = new DataTable();
@@ -4149,7 +3796,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -4243,7 +3890,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4253,21 +3900,17 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Error en la consulta no se pueden obtener los choferes", "GetChoferes");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Error en la consulta no se pueden obtener los choferes", "Error en la consulta no se pueden obtener los choferes", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
 
         }
 
-
-
-
-
         //gera
         // Este metodo es utilizado para insertar un nuevo chofer en la base de datos local
-        [HttpPost]
-        public JsonResult WsInsertarUsuario(UsuariosSystema userssystema)
+        [HttpPost] [Route("WsInsertarUsuario")]
+        public IHttpActionResult  WsInsertarUsuario(UsuariosSystema userssystema)
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -4358,7 +4001,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4369,7 +4012,7 @@ namespace WSTankFarm.Controllers
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar los usuarios", "WsInsertarUsuario");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar los usuarios", "Ha ocurrido un error en la consulta al Insertar los usuarios", "", "", "", "");
 
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4380,8 +4023,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para actualizar  un  usuario del sistema en la base de datos local
-        [HttpPost]
-        public JsonResult WsUpdateUsuario(UsuariosSystema userssystema)
+        [HttpPost] [Route("WsUpdateUsuario")]
+        public IHttpActionResult  WsUpdateUsuario(UsuariosSystema userssystema)
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -4466,7 +4109,7 @@ namespace WSTankFarm.Controllers
 
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4476,7 +4119,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar los usuarios", "WsUpdateUsuario");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar los usuarios", "Ha ocurrido un error en la consulta al actualizar los usuarios", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4488,7 +4131,10 @@ namespace WSTankFarm.Controllers
 
 
         //gera
-        public JsonResult GetUsuarios(string ID = "0", string all = "")
+        [HttpGet]
+        [Route("GetUsuarios")]
+       
+        public IHttpActionResult  GetUsuarios(string ID = "0", string all = "")
         {
             List<UsuariosSystema> lstUsuarios = new List<UsuariosSystema>();
             DataTable dT = new DataTable();
@@ -4525,7 +4171,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -4566,7 +4212,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4576,7 +4222,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Obtener los usuarios", "GetUsuarios");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los usuarios", "Ha ocurrido un error en la consulta al Obtener los usuarios", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4587,8 +4233,8 @@ namespace WSTankFarm.Controllers
         // gera
 
         // Este metodo es utilizado para eliminar  un  usuario del sistema en la base de datos local
-        [HttpGet]
-        public JsonResult WsDeleteUsuario(string id = "0")
+        [HttpPost] [Route("WsDeleteUsuario")]
+        public IHttpActionResult  WsDeleteUsuario(string id = "0")
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -4617,7 +4263,7 @@ namespace WSTankFarm.Controllers
 
 
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4627,7 +4273,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al ELIMINAR un usuario", "WsDeleteUsuario");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al ELIMINAR un usuario", "Ha ocurrido un error en la consulta al ELIMINAR un usuario", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4638,8 +4284,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para obtener roles
-        [HttpGet]
-        public JsonResult GetLanguague(string ID = "0")
+        [HttpGet] [Route("GetLanguague")]
+        public IHttpActionResult  GetLanguague(string ID = "0")
         {
             List<Languague> lstLanguague = new List<Languague>();
             DataTable dT = new DataTable();
@@ -4657,10 +4303,10 @@ namespace WSTankFarm.Controllers
                 {
                     sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.TablaIdioma + "]";
                 }
-               
+
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -4683,7 +4329,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4694,7 +4340,7 @@ namespace WSTankFarm.Controllers
                 AgregaLog("Ha ocurrido un error en la consulta al Obtener los idiomas", "GetLanguague");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los idiomas", "Ha ocurrido un error en la consulta al Obtener los idiomas", "", "", "", "");
 
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4704,8 +4350,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para insertar un nuevo ROl en la base de datos local
-        [HttpPost]
-        public JsonResult WsInsertarRol(Roles roles)
+        [HttpPost] [Route("WsInsertarRol")]
+        public IHttpActionResult  WsInsertarRol(Roles roles)
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -4715,18 +4361,18 @@ namespace WSTankFarm.Controllers
                 string sSelectLocaL = "";
 
                 sSelectLocaL = "USE [" + GlobalesLocal.BDLocal + "] INSERT INTO [dbo].[" + GlobalesLocal.TablaRol + "] ([Rol] ,[Status],[Users],[Customers],[Vehicles],[Drivers],[Department],[Brand],[Model],[CostCenter],[Perfiles],[Configuration]) VALUES (@Rol,@Status,@Users,@Customers,@Vehicles,@Drivers,@Department,@Brand,@Model,@CostCenter,@Perfiles,@Configuration)";
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Rol", Value = ((string[])roles.Rol)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Users", Value = ((string[])roles.Users)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Customers", Value = ((string[])roles.Customers)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Vehicles", Value = ((string[])roles.Vehicles)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Drivers", Value = ((string[])roles.Drivers)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Department", Value = ((string[])roles.Department)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Brand", Value = ((string[])roles.Brand)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Model", Value = ((string[])roles.Model)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@CostCenter", Value = ((string[])roles.CostCenter)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Perfiles", Value = ((string[])roles.Perfiles)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Configuration", Value = ((string[])roles.Configuration)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Status", Value = ((string[])roles.Status)[0] });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Rol", Value = roles.Rol });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Users", Value = roles.Users });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Customers", Value = roles.Customers });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Vehicles", Value = roles.Vehicles});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Drivers", Value = roles.Drivers});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Department", Value = roles.Department });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Brand", Value = roles.Brand});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Model", Value = roles.Model});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@CostCenter", Value = roles.CostCenter});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Perfiles", Value = roles.Perfiles});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Configuration", Value = roles.Configuration});
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Status", Value = roles.Status});
 
                 DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "Local");
 
@@ -4741,7 +4387,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED INSERTION OF ROL";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4751,7 +4397,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar en roles", "WsInsertarRol");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar en roles", "Ha ocurrido un error en la consulta al Insertar en roles", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4761,9 +4407,11 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para actualizar  un  Rol del sistema en la base de datos local
-        [HttpPost]
-        public JsonResult WsUpdateRol(Roles roles)
+        [HttpPost] [Route("WsUpdateRol")]
+        public IHttpActionResult  WsUpdateRol(Roles roles)
+            
         {
+            
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
             var ArrParametros1 = new List<SqlParameter>();
@@ -4774,19 +4422,19 @@ namespace WSTankFarm.Controllers
 
 
                 sSelectLocaL = "USE [" + GlobalesLocal.BDLocal + "] UPDATE [dbo].[" + GlobalesLocal.TablaRol + "] SET [Rol] = @Rol ,Users = @Users,Customers = @Customers,Vehicles = @Vehicles,Drivers =  @Drivers,Department = @Department,Brand = @Brand,Model = @Model, CostCenter= @CostCenter,Perfiles=@Perfiles, Configuration = @Configuration, Status=@Status  where ID=@ID ";
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Rol", Value = ((string[])roles.Rol)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Users", Value = ((string[])roles.Users)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Customers", Value = ((string[])roles.Customers)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Vehicles", Value = ((string[])roles.Vehicles)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Drivers", Value = ((string[])roles.Drivers)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Department", Value = ((string[])roles.Department)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Brand", Value = ((string[])roles.Brand)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Model", Value = ((string[])roles.Model)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@CostCenter", Value = ((string[])roles.CostCenter)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Perfiles", Value = ((string[])roles.Perfiles)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Configuration", Value = ((string[])roles.Configuration)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@Status", Value = ((string[])roles.Status)[0] });
-                ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = ((string[])roles.ID)[0] });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Rol", Value =roles.Rol });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Users", Value =roles.Users });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Customers", Value =roles.Customers });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Vehicles", Value =roles.Vehicles });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Drivers", Value =roles.Drivers });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Department", Value =roles.Department });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Brand", Value =roles.Brand });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Model", Value =roles.Model });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@CostCenter", Value =roles.CostCenter });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Perfiles", Value =roles.Perfiles });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Configuration", Value =roles.Configuration });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@Status", Value =roles.Status });
+                ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value =roles.ID });
 
                 DataAfectedLocal = BD.SetSQL(ArrParametros1, sSelectLocaL, "Local");
 
@@ -4802,7 +4450,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "ERROR";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4812,7 +4460,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar los roles", "WsUpdateRol");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar los roles", "Ha ocurrido un error en la consulta al actualizar los roles", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4821,8 +4469,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para dar de baja  un  Rol del sistema en la base de datos local
-        [HttpGet]
-        public JsonResult WsDeleteRol(string id)
+        [HttpPost] [Route("WsDeleteRol")]
+        public IHttpActionResult  WsDeleteRol(string id)
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -4851,7 +4499,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "ERROR";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4861,7 +4509,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al eliminar un rol", "WsDeleteRol");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al eliminar un rol", "Ha ocurrido un error en la consulta al eliminar un rol", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4872,8 +4520,8 @@ namespace WSTankFarm.Controllers
         //gera
 
         // Este metodo es utilizado para obtener roles
-        [HttpGet]
-        public JsonResult GetRol(string ID = "0", string all = "")
+        [HttpGet] [Route("GetRol")]
+        public IHttpActionResult  GetRol(string ID = "0", string all = "")
         {
             List<Roles> lstRoles = new List<Roles>();
             DataTable dT = new DataTable();
@@ -4908,7 +4556,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -4946,7 +4594,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -4957,7 +4605,7 @@ namespace WSTankFarm.Controllers
                 AgregaLog("Ha ocurrido un error en la consulta al Obtener los Roles", "GetRol");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los Roles", "Ha ocurrido un error en la consulta al Obtener los Roles", "", "", "", "");
 
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -4967,8 +4615,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para insertar un modelo de vehiculo en la base de de datos local
-        [HttpPost]
-        public JsonResult WsInsertModelo(modelo modelo)
+        [HttpPost] [Route("WsInsertModelo")]
+        public IHttpActionResult  WsInsertModelo(modelo modelo)
         {
 
             int DataAfected = 0;
@@ -5031,7 +4679,7 @@ namespace WSTankFarm.Controllers
                     }
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5041,7 +4689,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al insertar un modelo de vehiculo en la bd local", "WsInsertModelo");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al insertar  un modelo de vehiculo en la bd local", "Ha ocurrido un error en la consulta al insertar un modelo de vehiculo en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5049,8 +4697,8 @@ namespace WSTankFarm.Controllers
         }
         //gera
         // Este metodo es utilizado para obtener roles
-        [HttpGet]
-        public JsonResult GetModelByBrand(string MarcID = "0", string all = "")
+        [HttpGet] [Route("GetModelByBrand")]
+        public IHttpActionResult  GetModelByBrand(string MarcID = "0", string all = "")
         {
             List<modelo> lstmodelo = new List<modelo>();
             DataTable dT = new DataTable();
@@ -5059,9 +4707,9 @@ namespace WSTankFarm.Controllers
             try
             {
                 string sSelect = "";
-                if (MarcID != "0" && MarcID != "" && all == "")
+                if (MarcID != "0" && MarcID != "" && all == "" || all == null)
                 {
-                    
+
                     sSelect = "SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.Tablamodelo + "] where MarcID=@MarcID and Status<>@status";
                     var status = 0;
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcID", Value = MarcID });
@@ -5076,9 +4724,9 @@ namespace WSTankFarm.Controllers
                     else
                     {
                         sSelect = "  SELECT * FROM [" + GlobalesLocal.BDLocal + "].[dbo].[" + GlobalesLocal.Tablamodelo + "]where MarcID=@MarcID  order by Status";
-                      
+
                         ArrParametros1.Add(new SqlParameter { ParameterName = "@MarcID", Value = MarcID });
-          
+
                     }
 
 
@@ -5087,10 +4735,10 @@ namespace WSTankFarm.Controllers
 
 
 
-               
+
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
 
@@ -5118,7 +4766,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5129,7 +4777,7 @@ namespace WSTankFarm.Controllers
                 AgregaLog("Ha ocurrido un error en la consulta al Obtener los Roles", "GetModelByBrand");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los Roles", "Ha ocurrido un error en la consulta al Obtener los Roles", "", "", "", "");
 
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5141,8 +4789,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para insertar una configuracion en la base de datos local
-        [HttpPost]
-        public JsonResult WsInsertarConfiguracion(Configuracion configuracion)
+        [HttpPost] [Route("WsInsertarConfiguracion")]
+        public IHttpActionResult  WsInsertarConfiguracion(Configuracion configuracion)
         {
             int DataAfectedLocal = 0;
 
@@ -5174,7 +4822,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED UPGRADE OF CONFIGURACIÓN";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5184,7 +4832,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar datos en configuracion", "WsInsertarConfiguracion");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar datos en configuracion", "Ha ocurrido un error en la consulta al actualizar datos en configuracion", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5194,8 +4842,8 @@ namespace WSTankFarm.Controllers
 
         //gera
         // Este metodo es utilizado para obtener los estados
-        [HttpGet]
-        public JsonResult WsGetestados()
+        [HttpGet] [Route("WsGetestados")]
+        public IHttpActionResult  WsGetestados()
         {
             DataTable dT = new DataTable();
             DataResponse data = new DataResponse();
@@ -5233,7 +4881,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5243,7 +4891,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar datos en configuracion", "WsGetestados");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar datos en configuracion", "Ha ocurrido un error en la consulta al actualizar datos en configuracion", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5256,8 +4904,9 @@ namespace WSTankFarm.Controllers
         //gera
 
         // Este metodo es utilizado para obtener los datos de los  CP
-        [HttpGet]
-        public JsonResult WsGetDatosCP(string cp)
+        [HttpGet] 
+        [Route("WsGetDatosCP")]
+        public IHttpActionResult  WsGetDatosCP(string cp)
         {
             DataTable dT = new DataTable();
             DataResponse data = new DataResponse();
@@ -5297,7 +4946,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5307,7 +4956,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los codigos postales", "WsGetDatosCP");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al al obtener los codigos postales", "Ha ocurrido un error en la consulta al obtener los codigos postales", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5320,8 +4969,8 @@ namespace WSTankFarm.Controllers
         //gera
 
         // Este metodo es utilizado para obtener los municipios
-        [HttpGet]
-        public JsonResult WsGetmunicipios()
+        [HttpGet] [Route("WsGetmunicipios")]
+        public IHttpActionResult  WsGetmunicipios()
         {
             DataTable dT = new DataTable();
             DataResponse data = new DataResponse();
@@ -5360,7 +5009,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5370,7 +5019,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los municipios", "WsGetmunicipios");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los municipios", "Ha ocurrido un error en la consulta al obtener los municipios", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5381,8 +5030,8 @@ namespace WSTankFarm.Controllers
 
 
         // Este metodo es utilizado para obtener las marcas
-        [HttpGet]
-        public JsonResult WsGetmarcas(string id = "", string all = "")
+        [HttpGet] [Route("WsGetmarcas")]
+        public IHttpActionResult  WsGetmarcas(string id = "", string all = "")
         {
             DataTable dT = new DataTable();
             DataResponse data = new DataResponse();
@@ -5436,7 +5085,7 @@ namespace WSTankFarm.Controllers
                     data.Status = "OK";
                 }
 
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5446,7 +5095,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener las marcas", "WsGetmarcas");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener las marcas", "Ha ocurrido un error en la consulta al obtener las marcas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -5456,8 +5105,8 @@ namespace WSTankFarm.Controllers
         //gera
         // Este metodo es utilizado para actualizar una marca de vehiculo en la base de de datos local
         //Samy
-        [HttpPost]
-        public JsonResult WsUpdateMarca(marca marca)
+        [HttpPost] [Route("WsUpdateMarca")]
+        public IHttpActionResult  WsUpdateMarca(marca marca)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -5503,7 +5152,7 @@ namespace WSTankFarm.Controllers
                         data.Status = "ERROR";
                     }
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5512,12 +5161,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar una marca de vehiculo en la bd local", "WsUpdateMarca");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  una marca de vehiculo en la bd local", "Ha ocurrido un error en la consulta al actualizar una marca de vehiculo en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         // Este metodo es utilizado para insertar una marca de vehiculo en la base de de datos local
-        [HttpPost]
-        public JsonResult WsInsertMarca(marca marca)
+        [HttpPost] [Route("WsInsertMarca")]
+        public IHttpActionResult  WsInsertMarca(marca marca)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -5570,7 +5219,7 @@ namespace WSTankFarm.Controllers
                         data.Status = "ERROR";
                     }
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -5580,12 +5229,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al insertar una marca de vehiculo en la bd local", "WsInsertMarca");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al insertar  una marca de vehiculo en la bd local", "Ha ocurrido un error en la consulta al insertar una marca de vehiculo en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         // Este metodo es utilizado para obtener los modelos
-        [HttpGet]
-        public JsonResult WsGetmodelos()
+        [HttpGet] [Route("WsGetmodelos")]
+        public IHttpActionResult  WsGetmodelos()
         {
             DataTable dT = new DataTable();
             DataResponse data = new DataResponse();
@@ -5616,7 +5265,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5625,12 +5274,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al obtener los modelos", "WsGetmodelos");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al obtener los modelos", "Ha ocurrido un error en la consulta al obtener los modelos", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         // Este metodo es utilizado para actualizar un modelo de vehiculo en la base de de datos local
-        [HttpPost]
-        public JsonResult WsUpdateModelo(modelo modelo)
+        [HttpPost] [Route("WsUpdateModelo")]
+        public IHttpActionResult  WsUpdateModelo(modelo modelo)
         {
             int DataAfected = 0;
             DataResponse data = new DataResponse();
@@ -5689,7 +5338,7 @@ namespace WSTankFarm.Controllers
                         data.Status = "ERROR";
                     }
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5698,12 +5347,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar un modelo de vehiculo en la bd local", "WsUpdateModelo");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar  un modelo de vehiculo en la bd local", "Ha ocurrido un error en la consulta al actualizar un modelo de vehiculo en la bd local", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         // Este metodo es utilizado para insertar una configuracion en la base de datos local
-        [HttpPost]
-        public JsonResult WsUpdateConfiguracion(Configuracion configuracion)
+        [HttpPost] [Route("WsUpdateConfiguracion")]
+        public IHttpActionResult  WsUpdateConfiguracion(Configuracion configuracion)
         {
             int DataAfectedLocal = 0;
             DataResponse data = new DataResponse();
@@ -5735,7 +5384,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED UPDATED OF CONFIGURACIÓN";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5744,12 +5393,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Insertar en configuracion", "WsUpdateConfiguracion");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Insertar en configuracion", "Ha ocurrido un error en la consulta al Insertar en configuracion", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         //Este ws es utilizado para actualizar los acumulados en un  vehiculo en la base de datos de control Gas
-        [HttpGet]
-        public JsonResult WsUpdateAcumuladosVehicles(int value = 0, string tag = "")
+        [HttpPost] [Route("WsUpdateAcumuladosVehicles")]
+        public IHttpActionResult  WsUpdateAcumuladosVehicles(int value = 0, string tag = "")
         {
             try
             {
@@ -5786,7 +5435,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED UPGRADE OF VEHICLES";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5795,12 +5444,12 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar los acumulados en vehiculos en control gas", "WsUpdateAcumuladosVehicles");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar los acumulados en vehiculos  en control gas", "Ha ocurrido un error en la consulta al actualizar los acumulados en vehiculos en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         // Este metodo es utilizado para obtener la configuracion guardada en la tabla configuracion
-        [HttpGet]
-        public JsonResult GetConfiguracion(string ID = "0")
+        [HttpGet] [Route("GetConfiguracion")]
+        public IHttpActionResult  GetConfiguracion(string ID = "0")
         {
             List<Configuracion> lstConfiguracion = new List<Configuracion>();
             DataTable dT = new DataTable();
@@ -5826,7 +5475,7 @@ namespace WSTankFarm.Controllers
                 ArrParametros1.Add(new SqlParameter { ParameterName = "@ID", Value = ID });
                 dT = BD.GetSQL(sSelect, "Local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
                     ObjConfiguracion.ID = dR1["ID"].ToString();
@@ -5884,7 +5533,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -5893,13 +5542,13 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "GetConfiguracion");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "Ha ocurrido un error en la consulta al Obtener los datos de la configuracion", "", "", "", "");
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
         }
 
 
-        [HttpGet]
-        public JsonResult WsCheckReport()
+        [HttpPost] [Route("WsCheckReport")]
+        public IHttpActionResult  WsCheckReport()
         {
             DataResponse data = new DataResponse();
             try
@@ -5954,8 +5603,8 @@ namespace WSTankFarm.Controllers
                     }
                     //ObjConfiguracion.FECHA =;
                 }
-                var json = Json(data, JsonRequestBehavior.AllowGet);
-                json.MaxJsonLength = 500000000;
+                var json = Ok(data);
+                
                 return json;
             }
             catch (Exception e)
@@ -5965,13 +5614,13 @@ namespace WSTankFarm.Controllers
                 data.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar en inbox", "WsUpdateInbox");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar en inbox", "Ha ocurrido un error en la consulta al actualizar en inbox", "", "", "", "");
-                var json = Json(data, JsonRequestBehavior.AllowGet);
-                json.MaxJsonLength = 500000000;
+                var json = Ok(data);
+                
                 return json;
             }
         }
 
-        [HttpGet]
+        [HttpGet] [Route("WSGetDatosReporteConsumos")]
         public List<ReporteConsumos> WSGetDatosReporteConsumos(string StartDate, string EndDate)
         {
 
@@ -6018,7 +5667,7 @@ namespace WSTankFarm.Controllers
 
         }
 
-        [HttpGet]
+        [HttpPost] [Route("EnviarReporteConsumos")]
         public DataResponse EnviarReporteConsumos(Configuracion objConfig, string Estacion, List<ReporteConsumos> Datos)
         {
             DataResponse data = new DataResponse();
@@ -6213,8 +5862,8 @@ namespace WSTankFarm.Controllers
 
         //VALIDACIONESSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
         // Este metodo es utilizado para obtener la configuracion guardada en la tabla configuracion
-        [HttpPost]
-        public JsonResult WsValidarVehiculo(string Tag = "0")
+        [HttpPost] [Route("WsValidarVehiculo")]
+        public IHttpActionResult  WsValidarVehiculo(string Tag = "0")
         {
             {
                 List<Vehiculo> lstVehiculos = new List<Vehiculo>();
@@ -6234,7 +5883,7 @@ namespace WSTankFarm.Controllers
 
                     dT = BD.GetSQL(sSelect, "ControlGas", ArrParametros1);
                     var columnas = dT.Columns;
-                    //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                    //return Ok(dT.Rows);
                     foreach (DataRow dR1 in dT.Rows)
                     {
                         Vehiculo ObjVehiculo = new Vehiculo();
@@ -6337,7 +5986,7 @@ namespace WSTankFarm.Controllers
                         data.Message = "NO VEHICLE EXIST";
                         data.Status = "OK";
                     }
-                    return Json(data, JsonRequestBehavior.AllowGet);
+                    return Ok(data);
                 }
                 catch (Exception e)
                 {
@@ -6346,7 +5995,7 @@ namespace WSTankFarm.Controllers
                     mensaje.Status = "Error";
                     AgregaLog("Ha ocurrido un error en la consulta al verificar si existe un vehiculo", "WsValidarVehiculo");
                     EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al verificar si existe un vehiculo", "Ha ocurrido un error en la consulta al verificar si existe un vehiculo", "", "", "", "");
-                    return Json(mensaje, JsonRequestBehavior.AllowGet);
+                    return Ok(mensaje);
                 }
             }
         }
@@ -6401,22 +6050,8 @@ namespace WSTankFarm.Controllers
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        [HttpGet]
-        public JsonResult ValidarLogin(string UserName, string Password)
+        [HttpPost] [Route("WsUpdateDespachoControlGas")]
+        public IHttpActionResult  ValidarLogin(string UserName, string Password)
         {
             DataResponse data = new DataResponse();
             List<UsuariosSystema> lstUsuarios = new List<UsuariosSystema>();
@@ -6439,8 +6074,8 @@ namespace WSTankFarm.Controllers
 
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@UserName", Value = UserName });
                     ArrParametros1.Add(new SqlParameter { ParameterName = "@Password", Value = Password });
-                   
-                  
+
+
                     dT = BD.GetSQL(sSql, "Local", ArrParametros1);
 
                     if (dT.Rows.Count > 0)
@@ -6507,7 +6142,7 @@ namespace WSTankFarm.Controllers
                         data.Status = "FOUND";
                     }
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
             }
             catch (Exception e)
             {
@@ -6516,31 +6151,13 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al validar el login" + e, "ValidarLogin");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al validar el login" + e, "Ha ocurrido un error en la consulta al validar el login", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        [HttpGet]
+        [Route("ValidarHorarioChofer")]
         public string ValidarHorarioChofer(string Tag = "0")
         {
             string result = "";
@@ -6664,7 +6281,6 @@ namespace WSTankFarm.Controllers
             }
             return result;
         }
-
         public string RemoveDiacritics(string input)
         {
             string stFormD = input.Normalize(NormalizationForm.FormD);
@@ -6680,6 +6296,7 @@ namespace WSTankFarm.Controllers
             }
             return (sb.ToString().Normalize(NormalizationForm.FormC));
         }
+        [Route("ValidarHorarioVehiculo")]
         public string ValidarHorarioVehiculo(string Tag = "0")
         {
             string result = "";
@@ -6806,8 +6423,8 @@ namespace WSTankFarm.Controllers
 
 
         //Este ws es utilizado para actualizar el odometro  de un vehiculo base de datos de control Gas
-        [HttpPost]
-        public JsonResult WsUpdateOdometro(string tag, string odometro)
+        [HttpPost] [Route("WsUpdateOdometro")]
+        public IHttpActionResult  WsUpdateOdometro(string tag, string odometro)
         {
 
             int DataAfected = 0;
@@ -6836,7 +6453,7 @@ namespace WSTankFarm.Controllers
                     data.Message = "FAILED UPGRADE ODOMETER";
                     data.Status = "ERROR";
                 }
-                return Json(data, JsonRequestBehavior.AllowGet);
+                return Ok(data);
 
             }
             catch (Exception e)
@@ -6846,7 +6463,7 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Ha ocurrido un error en la consulta al actualizar el odometro en control gas", "WsUpdateOdometro");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Ha ocurrido un error en la consulta al actualizar el odometro en control gas", "Ha ocurrido un error en la consulta al actualizar el odometro en control gas", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
 
 
@@ -7021,7 +6638,7 @@ namespace WSTankFarm.Controllers
         }
 
         // Este metodo es utilizado para insertar una un mensaje por enviar en la tabla de inbox en la base de datos local
-        [HttpPost]
+        [HttpPost] [Route("WsInsertarInbox")]
         public string WsInsertarInbox(string MENSAJE, string CORREO, int IDUSER, string STATUSMSJ, int INTENTOS)
         {
             int DataAfectedLocal = 0;
@@ -7067,7 +6684,7 @@ namespace WSTankFarm.Controllers
         }
 
         // Este metodo es utilizado para actualizar una un mensaje por enviar en la tabla de inbox en la base de datos local
-        [HttpPost]
+        [HttpPost] [Route("WsUpdateInbox")]
         public string WsUpdateInbox(string MENSAJE, string CORREO, int IDUSER, string STATUSMSJ, int INTENTOS)
         {
             int DataAfectedLocal = 0;
@@ -7112,7 +6729,7 @@ namespace WSTankFarm.Controllers
         }
 
         // Este metodo es utilizado para actualizar una un mensaje por enviar en la tabla de inbox en la base de datos local
-        [HttpGet]
+        [HttpPost] [Route("WsUpdatenNombres")]
         public string WsUpdatenNombres()
         {
             int DataAfectedLocal = 0;
@@ -7131,7 +6748,7 @@ namespace WSTankFarm.Controllers
 
                 dT = BD.GetSQL(sSelectLocaL, "local", ArrParametros1);
                 var columnas = dT.Columns;
-                //return Json(dT.Rows, JsonRequestBehavior.AllowGet);
+                //return Ok(dT.Rows);
                 foreach (DataRow dR1 in dT.Rows)
                 {
                     name = dR1["Name"].ToString();
@@ -7171,7 +6788,7 @@ namespace WSTankFarm.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpPost] [Route("ReporteExcelChoferes")]
         public bool ReporteExcelChoferes()
         {
             var oAssembly = Assembly.GetExecutingAssembly();
@@ -7342,20 +6959,20 @@ namespace WSTankFarm.Controllers
 
                 sl.AutoFitColumn("B", "AU");
 
-                sl.SaveAs(Server.MapPath((@"\Reporte.xlsx"))); // Si es un libro nuevo
-                string Path = Server.MapPath((@"\Reporte.xlsx")).ToString();
-                strFile = strFile.Replace("#FECHA", Hoy.ToString());
-                strFile = strFile.Replace("#NOMBRE", "Reporte por Chofer");
-                statusCorreo = EnviaCorreo("gerardo.carrillo@tdcon40.com", "Reporte generado", strFile, Path, "", "", "Reporte");
+               // //sl.SaveAs(Server.MapPath((@"\Reporte.xlsx"))); // Si es un libro nuevo
+               //// string Path = Server.MapPath((@"\Reporte.xlsx")).ToString();
+               // strFile = strFile.Replace("#FECHA", Hoy.ToString());
+               // strFile = strFile.Replace("#NOMBRE", "Reporte por Chofer");
+               // //statusCorreo = EnviaCorreo("gerardo.carrillo@tdcon40.com", "Reporte generado", strFile, Path, "", "", "Reporte");
 
-                if (statusCorreo == true)
-                {
-                    statusReporte = true;
-                }
-                else
-                {
-                    statusReporte = false;
-                }
+               // if (statusCorreo == true)
+               // {
+               //     statusReporte = true;
+               // }
+               // else
+               // {
+               //     statusReporte = false;
+               // }
             }
             catch (Exception e)
             {
@@ -7365,8 +6982,8 @@ namespace WSTankFarm.Controllers
             return statusReporte;
         }
 
-        [HttpGet]
-        public JsonResult GetDatosProc(string FechaIni = "", string FechaFin = "", string columnaBuscar = "", string TipoCombustible = "")       
+        [HttpGet] [Route("GetDatosProc")]
+        public IHttpActionResult  GetDatosProc(string FechaIni = "", string FechaFin = "", string columnaBuscar = "", string TipoCombustible = "")
         {
             List<Despacho> lstDespachos = new List<Despacho>();
             List<DatosResultProc> lstProc = new List<DatosResultProc>();
@@ -7436,8 +7053,8 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                var json = Json(data, JsonRequestBehavior.AllowGet);
-                json.MaxJsonLength = 500000000;
+                var json = Ok(data);
+                
                 return json;
             }
             catch (Exception e)
@@ -7447,13 +7064,14 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Error en la consulta no se pueden obtener los Despachos", "GetDatosProc");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Error en la consulta no se pueden obtener los despachos de la vista", "Error en la consulta no se pueden obtener los despachos de la vista", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
 
 
-
-        public JsonResult GetReporteGlobal(string FechaIni = "", string FechaFin = "", string Combustible = "")
+        [HttpGet]
+        [Route("GetReporteGlobal")]
+        public IHttpActionResult  GetReporteGlobal(string FechaIni = "", string FechaFin = "", string Combustible = "")
         {
 
             List<ReporteGlobal> lstReporteGlobal = new List<ReporteGlobal>();
@@ -7521,8 +7139,8 @@ namespace WSTankFarm.Controllers
                     data.Message = "NO DATA FOUND";
                     data.Status = "OK";
                 }
-                var json = Json(data, JsonRequestBehavior.AllowGet);
-                json.MaxJsonLength = 500000000;
+                var json = Ok(data);
+                
                 return json;
             }
             catch (Exception e)
@@ -7532,147 +7150,10 @@ namespace WSTankFarm.Controllers
                 mensaje.Status = "Error";
                 AgregaLog("Error en la consulta no se pueden obtener los datos en el reporte global", "GetReporteGlobal");
                 EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Error en la consulta no se pueden obtener los datos en el reporte global", "Error en la consulta no se pueden obtener los datos en el reporte global", "", "", "", "");
-                return Json(mensaje, JsonRequestBehavior.AllowGet);
+                return Ok(mensaje);
             }
         }
         //Samy
-
-
-
-        //public  void GenerarExcel()
-        //{
-        //    // Crear un objeto SqlConnection, y luego pasar la ConnectionString al constructor.            
-        //    SqlConnection Conection = new SqlConnection("Data Source=DESKTOP-QUK1H16;Initial Catalog=[CORPORATIVO_MODERNOS];User ID=sa;Password=electronica");
-
-        //    // Utilizar una variable para almacenar la instrucción SQL.
-        //    string SelectString = "SELECT[nrocho] as NumeroChofer,[diacar] as DiasCarro,[hraini] as HoraInicio ,[hrafin] as HoraFin, ChoferesCG.[tag] as Tag,[codest] as Status,[logusu] as Usuario, [logfch] as FechaRegistro, [Nombre] as NombreCompleto,[Telefono],[IdIdioma] as Idioma,[Gerente],[Correo] from["+ GlobalesCorporativo.BDCorporativoModerno + "].[dbo].["+ GlobalesCorporativo.TablaClientesChoferes +"] as ChoferesCG inner join[" + GlobalesLocal. BDLocal +"].[dbo].["+ GlobalesLocal.TablaChoferes +"]  as ChoferesTF on ChoferesCG.tag=ChoferesTF.Tag";
-        //    SqlDataAdapter Adaptador = new SqlDataAdapter(SelectString, Conection);
-        //    DataSet DS = new DataSet();
-
-
-
-
-
-        //    // Abrir la conexión.
-        //    Conection.Open();
-        //    Adaptador.Fill(DS);
-        //    Conection.Close();
-
-        //    // Creamos un objeto Excel.
-        //    Excel.Application Mi_Excel = default(Excel.Application);
-        //    // Creamos un objeto WorkBook. Para crear el documento Excel.           
-        //    Excel.Workbook LibroExcel = default(Excel.Workbook);
-        //    // Creamos un objeto WorkSheet. Para crear la hoja del documento.
-        //    Excel.Worksheet HojaExcel = default(Excel.Worksheet);
-
-        //    // Iniciamos una instancia a Excel, y Hacemos visibles para ver como se va creando el reporte, 
-        //    // podemos hacerlo visible al final si se desea.
-        //    Mi_Excel = new Excel.Application();
-        //    Mi_Excel.Visible = true;
-
-        //    /* Ahora creamos un nuevo documento y seleccionamos la primera hoja del 
-        //     * documento en la cual crearemos nuestro informe. 
-        //     */
-        //    // Creamos una instancia del Workbooks de excel.            
-        //    LibroExcel = Mi_Excel.Workbooks.Add();
-        //    // Creamos una instancia de la primera hoja de trabajo de excel            
-        //    HojaExcel = LibroExcel.Worksheets[1];
-        //    HojaExcel.Visible = Excel.XlSheetVisibility.xlSheetVisible;
-
-        //    // Hacemos esta hoja la visible en pantalla 
-        //    // (como seleccionamos la primera esto no es necesario
-        //    // si seleccionamos una diferente a la primera si lo
-        //    // necesitariamos).
-        //    HojaExcel.Activate();
-
-        //    // Crear el encabezado de nuestro informe.
-        //    // La primera línea une las celdas y las convierte un en una sola.            
-        //    HojaExcel.Range["A1:E1"].Merge();
-        //    // La segunda línea Asigna el nombre del encabezado.
-        //    HojaExcel.Range["A1:E1"].Value = "----------------------------------------------";
-        //    // La tercera línea asigna negrita al titulo.
-        //    HojaExcel.Range["A1:E1"].Font.Bold = true;
-        //    // La cuarta línea signa un Size a titulo de 15.
-        //    HojaExcel.Range["A1:E1"].Font.Size = 15;
-
-        //    // Crear el subencabezado de nuestro informe
-        //    HojaExcel.Range["A2:E2"].Merge();
-        //    HojaExcel.Range["A2:E2"].Value = "ENCUESTA DE SATISFACCIÓN AL CLIENTE EXTERNO";
-        //    HojaExcel.Range["A2:E2"].Font.Italic = true;
-        //    HojaExcel.Range["A2:E2"].Font.Size = 13;
-
-        //    Excel.Range objCelda = HojaExcel.Range["A3", Type.Missing];
-        //    objCelda.Value = "NumeroChofer";
-
-        //    objCelda = HojaExcel.Range["B3", Type.Missing];
-        //    objCelda.Value = "DiasCarro";
-
-        //    objCelda = HojaExcel.Range["C3", Type.Missing];
-        //    objCelda.Value = "HoraInicio";
-
-        //    objCelda = HojaExcel.Range["D3", Type.Missing];
-        //    objCelda.Value = "HoraFin";
-
-        //    objCelda = HojaExcel.Range["E3", Type.Missing];
-        //    objCelda.Value = "Tag";
-
-        //    objCelda.EntireColumn.NumberFormat = "###,###,###.00";
-
-        //    int i = 4;
-        //    foreach (DataRow Row in DS.Tables[0].Rows)
-        //    {
-        //        // Asignar los valores de los registros a las celdas
-        //        HojaExcel.Cells[i, "A"] = Row.ItemArray[0];
-        //        // ID
-        //        HojaExcel.Cells[i, "B"] = Row.ItemArray[1];
-        //        // Pregunta
-        //        HojaExcel.Cells[i, "C"] = Row.ItemArray[2];
-        //        // Opciones
-        //        HojaExcel.Cells[i, "D"] = Row.ItemArray[3];
-        //        // Valor de la Respuesta
-        //        HojaExcel.Cells[i, "E"] = Row.ItemArray[4];
-        //        // Numero Votos
-
-        //        i++;
-        //    }
-
-        //    // Seleccionar todo el bloque desde A1 hasta D #de filas.
-        //    Excel.Range Rango = HojaExcel.Range["A3:E" + (i - 1).ToString()];
-
-        //    // Selecionado todo el rango especificado
-        //    Rango.Select();
-
-        //    // Ajustamos el ancho de las columnas al ancho máximo del
-        //    // contenido de sus celdas
-        //    Rango.Columns.AutoFit();
-
-        //    // Asignar filtro por columna
-        //    Rango.AutoFilter(1);
-
-        //    LibroExcel.SaveAs(Server.MapPath((@"\Ejemplo.xlsx"))); // Si es un libro nuevo
-        //    LibroExcel.Saved = true;
-
-        //    LibroExcel.Save();
-
-        //    EnviaCorreo("gerardo.carrillo@tdcon40.com;juan.quijano@tdcon40.com", "Error al enviar correo", "Error al enviar correo", HojaExcel.ToString(), "", "", "");
-
-
-        //    // Crear un total general
-        //   //LibroExcel.PrintPreview();
-        //}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         public static void AgregaLog(string Valor, string Metodo)
@@ -7711,7 +7192,7 @@ namespace WSTankFarm.Controllers
             log.Close();
         }
 
-
+        //[Route("GetReporteGlobal")]
         private DatosCorreo GetDatosCorreo()
         {
             var oCorr = new DatosCorreo();
@@ -7811,1006 +7292,480 @@ namespace WSTankFarm.Controllers
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    }
-    public class DatosCorreo
-    {
-        public string Correo { get; set; }
-        public string Contrasenia { get; set; }
-        public string ServidorSMTP { get; set; }
-        public string Puerto { get; set; }
-        public bool EnableSSL { get; set; }
-        public string CCO { get; set; }
-    }
-    public class DatosResultProc
-    {
-
-        public List<string> ArrayProc = new List<string>();
-        public List<string> ArrayFechas = new List<string>();
-
     }
 
-    public class ReporteGlobal
-    {
-        public List<string> ArrayCentroCostos = new List<string>();
-        public List<double> ArrayCantidad = new List<double>();
 
-    }
-    public class Despacho
-    {
 
-        public string xResposableVehiculo { get; set; } = "";
-        public string xTagVehiculo { get; set; } = "";
-        public string xDepartamento { get; set; } = "";
-        public string xCentroCostos { get; set; } = "";
-        public string xMarca { get; set; } = "";
-        public string xModelo { get; set; } = "";
-        public string xNombreChofer { get; set; } = "";
-        public string xTagChofer { get; set; } = "";
-        public string xGerente { get; set; } = "";
-        public string xEstacion { get; set; } = "";
-        public string xFecha { get; set; } = "";
-        public string xTurno { get; set; } = "";
-        public string xCorte { get; set; } = "";
-        public string xDespacho { get; set; } = "";
-        public string xProducto { get; set; } = "";
-        public string xProductoUni { get; set; } = "";
-        public string xCliente { get; set; } = "";
-        public string xChofer { get; set; } = "";
-        public string xDespachador { get; set; } = "";
-        public string xFechaCorte { get; set; } = "";
-        public string xPlacas { get; set; } = "";
-        public int nrotrn { get; set; } = 0;
-        public int codgas { get; set; } = 0;
-        public int nrobom { get; set; } = 0;
-        public int fchtrn { get; set; } = 0;
-        public string xHoraDespacho { get; set; } = "";
-        public int hratrn { get; set; } = 0;
-        public int fchcor { get; set; } = 0;
-        public int nrotur { get; set; } = 0;
-        public int codprd { get; set; } = 0;
-        public double can { get; set; } = 0;
-        public double mto { get; set; } = 0;
-        public int codcli { get; set; } = 0;
-        public int nroveh { get; set; } = 0;
-        public int tar { get; set; } = 0;
-        public int odm { get; set; } = 0;
-        public int codisl { get; set; } = 0;
-        public int nrocte { get; set; } = 0;
-        public int fchcte { get; set; } = 0;
-        public double mtogto { get; set; } = 0;
-        public string rut { get; set; } = "";
-        public string cho { get; set; } = "";
+    public class Cliente
+    {
+        public string cod { get; set; }
+        public string den { get; set; }
+        public string dom { get; set; }
+        public string col { get; set; }
+        public string del { get; set; }
+        public string ciu { get; set; }
+        public string est { get; set; }
+        public string tel { get; set; }
+        public string fax { get; set; }
+        public string rfc { get; set; }
+        public double tipval { get; set; } = 0;
+        public double mtoasg { get; set; } = 0;
+        public double mtodis { get; set; } = 0;
+        public double mtorep { get; set; } = 0;
+        public double cndpag { get; set; } = 0;
+        public double diarev { get; set; } = 0;
+        public string horrev { get; set; }
+        public double diapag { get; set; } = 0;
+        public string horpag { get; set; }
+        public string cto { get; set; }
+        public string obs { get; set; }
+        public string codext { get; set; }
+        public double datcon { get; set; } = 0;
+        public string codpos { get; set; }
         public double pto { get; set; } = 0;
-        public int codres { get; set; } = 0;
-        public int graprd { get; set; } = 0;
-        public int nroarc { get; set; } = 0;
-        public int nrofac { get; set; } = 0;
-        public int gasfac { get; set; } = 0;
-        public int nroedc { get; set; } = 0;
-        public int chkedc { get; set; } = 0;
-        public double pre { get; set; } = 1;
-        public int niv { get; set; } = 0;
-        public int nrocho { get; set; } = 0;
-        public int tiptrn { get; set; } = 0;
-        public int logmsk { get; set; } = 0;
-        public int logusu { get; set; } = 0;
-        public DateTime lognew { get; set; }
-        public DateTime logfch { get; set; }
-        public DateTime logexp { get; set; }
-        public string datref { get; set; } = "";
-        public string satuid { get; set; } = "";
-        public string satrfc { get; set; } = "";
-        public List<string> ArrayGasolinaTGF = new List<string>();
-        public List<double> ArrayDieselTF = new List<double>();
-        public List<string> ArrayDieselTGF = new List<string>();
-        public List<string> ArrayFechasTF = new List<string>();
-        public List<string> ArrayFechasGasTGF = new List<string>();
-        public List<string> ArrayFechasDieselTGF = new List<string>();
-        public List<int> ArrayTrnTGF = new List<int>();
-        public List<int> ArrayTrnTF = new List<int>();
-        public List<string> ArrayFechasGeneral = new List<string>();
+        public double ptosdo { get; set; } = 0;
+        public double debsdo { get; set; } = 0;
+        public double cresdo { get; set; } = 0;
+        public double fmtexp { get; set; } = 0;
+        public string arcexp { get; set; }
+        public double polcor { get; set; } = 0;
+        public double ultcor { get; set; } = 0;
+        public double debnro { get; set; } = 0;
+        public double crenro { get; set; } = 0;
+        public double debglo { get; set; } = 0;
+        public double codtip { get; set; } = 0;
+        public double codzon { get; set; } = 0;
+        public double codgrp { get; set; } = 0;
+        public double codest { get; set; } = 0;
+        public double logusu { get; set; } = 0;
+        public string logfch { get; set; }
+        public string lognew { get; set; }
+        public string pai { get; set; }
+        public string correo { get; set; }
+        public double dattik { get; set; } = 0;
+        public double ptodebacu { get; set; } = 0;
+        public double ptodebfch { get; set; } = 0;
+        public double ptocreacu { get; set; } = 0;
+        public double ptocrefch { get; set; } = 0;
+        public double ptovenacu { get; set; } = 0;
+        public double ptovenfch { get; set; } = 0;
+        public string domnroext { get; set; }
+        public string domnroint { get; set; }
+        public double datvar { get; set; } = 0;
+        public string nroctapag { get; set; }
+        public double tipopepag { get; set; } = 0;
+        public string cveest { get; set; }
+        public string cvetra { get; set; }
+        public string geodat { get; set; }
+        public double geolat { get; set; } = 0;
+        public double geolng { get; set; } = 0;
+        public double taxext { get; set; } = 0;
+        public string taxextid { get; set; }
+        public double bcomn1cod { get; set; } = 0;
+        public string bcomn1den { get; set; }
+        public string bcomn1cta { get; set; }
+        public double bcomn2cod { get; set; } = 0;
+        public string bcomn2den { get; set; }
+        public double bcomn2cta { get; set; } = 0;
+        public double bcome1cod { get; set; } = 0;
+        public string bcome1den { get; set; }
+        public string bcome1cta { get; set; }
+        public double bcome2cod { get; set; } = 0;
+        public string bcome2den { get; set; }
+        public string bcome2cta { get; set; }
+        public double perfis { get; set; } = 0;
+        public string perfisnom { get; set; }
+        public string perfisapp { get; set; }
+        public string perfisapm { get; set; }
+        public string curp { get; set; }
+        public double codrefban { get; set; } = 0;
+        public string paisat { get; set; }
+        public string satuso { get; set; }
 
 
 
-
+        public string mensaje { get; set; }
     }
 
-    public class DataResponse
-    {
-        public List<Cliente> lstClients { get; set; }
-        public List<Vehiculo> lstVehicles { get; set; }
-        public List<Choferes> lstChoferes { get; set; }
-        public List<UsuariosSystema> lstUsuarios { get; set; }
-        public List<Roles> lstRoles { get; set; }
-        public List<Languague> lstLanguague { get; set; }
-        public List<Configuracion> lstConfiguracion { get; set; }
-        public List<estados> lstestados { get; set; }
-        public List<municipios> lstmunicipios { get; set; }
-        public List<marca> lstmarcas { get; set; }
-        public List<modelo> lstmodelo { get; set; }
-        public List<cp> lstcp { get; set; }
-        public List<Departamentos> lstDep { get; set; }
 
-        public List<Despacho> lstDespachos { get; set; }
-        public List<ReporteGlobal> lstReporteGlobal { get; set; }
-        public List<CentroCostos> lstCentroCostos { get; set; }
-        public List<DatosResultProc> lstProc { get; set; }
-        public List<Perfiles> lstPerfiles { get; set; }
-        public string ID { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string Message { get; set; } = "";
-    }
-    public class DatosUsuario
+    public class Vehiculo
     {
-        public string UserName { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Deparment { get; set; } = "";
-        public string RFID { get; set; } = "";
-        public string ID { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string Mensaje { get; set; } = "";
+
+        public int codcli { get; set; }
+        public int nroveh { get; set; }
+        public int tar { get; set; }
+        public string plc { get; set; }
+        public string den { get; set; }
+        public string rsp { get; set; }
+        public string grp { get; set; }
+        public int diacar { get; set; }
+        public int hraini { get; set; }
+        public int hrafin { get; set; }
+        public int carmax { get; set; }
+        public int candia { get; set; }
+        public int cansem { get; set; }
+        public int canmes { get; set; }
+        public int acudia { get; set; } = 0;
+        public int acusem { get; set; } = 0;
+        public int acumes { get; set; } = 0;
+        public int ultcar { get; set; } = 0;
+        public int ultodm { get; set; } = 0;
+        public int codgas { get; set; }
+        public int codprd { get; set; }
+        public double debsdo { get; set; } = 0;
+        public int debfch { get; set; } = 0;
+        public int debnro { get; set; } = 0;
+        public double debcan { get; set; } = 0;
+        public int nip { get; set; } = 0;
+        public double ptosdo { get; set; } = 0;
+        public int ptofch { get; set; } = 0;
+        public double ptocan { get; set; } = 0;
+        public double premto { get; set; } = 0;
+        public double prepgo { get; set; } = 0;
+        public double prefid { get; set; } = 0;
+        public string cnvemp { get; set; }
+        public string cnvobs { get; set; }
+        public int cnvfch { get; set; } = 0;
+        public string manobs { get; set; }
+        public int manper { get; set; } = 0;
+        public int manult { get; set; } = 0;
+        public string rut { get; set; }
+        public string tag { get; set; }
+        public int vto { get; set; } = 0;
+        public int limtur { get; set; } = 0;
+        public int ulttur { get; set; } = 0;
+        public int acutur { get; set; } = 0;
+        public int limprd { get; set; } = 0;
+        public int acuprd { get; set; } = 0;
+        public int crefch { get; set; } = 0;
+        public int crenro { get; set; } = 0;
+        public double crecan { get; set; } = 0;
+        public int crefch2 { get; set; } = 0;
+        public int crenro2 { get; set; } = 0;
+        public double crecan2 { get; set; } = 0;
+        public int debfch2 { get; set; } = 0;
+        public int debnro2 { get; set; } = 0;
+        public double debcan2 { get; set; } = 0;
+        public int est { get; set; }
+        public string niplog { get; set; }
+        public int logusu { get; set; }
+        public string logfch { get; set; }
+        public string lognew { get; set; }
+        public string tagadi { get; set; }
+        public string ctapre { get; set; }
+        public string nropat { get; set; }
+        public string nroeco { get; set; }
+        public int hraini2 { get; set; } = 0;
+        public int hrafin2 { get; set; } = 0;
+        public int hraini3 { get; set; } = 0;
+        public int hrafin3 { get; set; } = 0;
+        public int aju { get; set; } = 0;
+        public double ptodebacu { get; set; } = 0;
+        public int ptodebfch { get; set; } = 0;
+        public double ptocreacu { get; set; } = 0;
+        public int ptocrefch { get; set; } = 0;
+        public double ptovenacu { get; set; } = 0;
+        public int ptovenfch { get; set; } = 0;
+        public string tagex1 { get; set; }
+        public string tagex2 { get; set; }
+        public string tagex3 { get; set; }
+        public double ultcan { get; set; } = 0;
+        public int datvar { get; set; }
+        public string catprd { get; set; }
+        public string catuni { get; set; }
+        public string dialim { get; set; }
+        public object company { get; set; }
+        public object profileName { get; set; }
+        public string Departamentos { get; set; } = "";
+        public string ValidacionOdometro { get; set; } = "";
+        public string NombreDepartamento { get; set; } = "";
     }
-    public class DatosVehiculo
+
+    public class ChangueStatus
     {
-        public string CarName { get; set; } = "";
-        public string Tag { get; set; } = "";
-        public string ID { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string Mensaje { get; set; } = "";
-    }
-    public class Mensajes
-    {
+        public string ID { get; set; }
         public string Status { get; set; }
-        public string Mensaje { get; set; }
+        public string table { get; set; }
+        public string nameid { get; set; }
+        public string nameStatus { get; set; }
+        public string BDD { get; set; }
+
     }
-    public class BDD
+    public class Choferes
+    {
+        public int ID { get; set; }
+        public string Nombre { get; set; }
+        public string Telefono { get; set; }
+        public int IdIdioma { get; set; }
+        public string Gerente { get; set; }
+        public string Correo { get; set; }
+        public string Perfil { get; set; }
+        public int codcli { get; set; }
+        public string Company { get; set; }
+        public int nrocho { get; set; }
+        public string den { get; set; }
+        public int diacar { get; set; }
+        public int hraini { get; set; }
+        public int hrafin { get; set; }
+        public string tag { get; set; }
+        public int codest { get; set; }
+
+        public string Status { get; set; }
+        public string LastName { get; set; }
+        public string SecondLastName { get; set; }
+        public string Departamento { get; set; }
+        public string CentroCostos { get; set; }
+        public string ManagerEmail { get; set; }
+        public string DepartamentoName { get; set; }
+        public string CentroCostosName { get; set; }
+        public string TagOld { get; set; }
+        public string IDP { get; set; }
+
+    }
+
+    public class UsuariosSystema
+    {
+        public int ID { get; set; }
+        public string Nombre { get; set; }
+        public string LastName { get; set; }
+        public string SecondLastName { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
+        public int IdRol { get; set; }
+        public int IdIdioma { get; set; }
+        public string Telefono { get; set; }
+        public string Correo { get; set; }
+        public string Status { get; set; }
+        public string Compania { get; set; }
+        public string codcli { get; set; }
+        public string Mensaje { get; set; }
+        public string Rol { get; set; }
+        public string Idioma { get; set; }
+        public string Departamento { get; set; }
+        public string IdDep { get; set; }
+        public string Manager { get; set; }
+        public Roles Roles { get; set; }
+        public string Token { get; set; }
+
+
+
+
+    }
+    public class Languague
+    {
+        public object ID { get; set; }
+        public object Idioma { get; set; } = "";
+        public object Status { get; set; } = "0";
+
+
+    }
+    public class Departamentos
+    {
+        public string ID { get; set; }
+        public string Departamento { get; set; } = "";
+        public string Status { get; set; } = "0";
+
+
+    }
+
+
+    public class Marcas
+    {
+        public object ID { get; set; }
+        public object Marca { get; set; } = "";
+        public object Status { get; set; } = "0";
+
+
+    }
+
+    public class Modelos
+    {
+        public object ID { get; set; }
+        public object Modelo { get; set; } = "";
+        public object Status { get; set; } = "0";
+
+
+    }
+
+    public class Roles
+    {
+        public object ID { get; set; }
+        public object Rol { get; set; } = "Sin rol";
+        public object Status { get; set; } = "";
+        public object Users { get; set; } = "";
+        public object Customers { get; set; } = "";
+        public object Vehicles { get; set; } = "";
+        public object Drivers { get; set; } = "";
+        public object Department { get; set; } = "";
+        public object Brand { get; set; } = "";
+        public object Model { get; set; } = "";
+        public object CostCenter { get; set; } = "";
+        public object Perfiles { get; set; } = "";
+        public object Configuration { get; set; } = "";
+
+
+    }
+
+    public class Configuracion
     {
         public String ID { get; set; }
-        public static String Base { get; set; } = "CORPORATIVO_MODERNOS";
-        public String Usuario { get; set; } = "sa";
-        public String Password { get; set; } = "1234";
-        public static String Server { get; set; } = "";
-        public static String Conexion { get; set; } = "";
+        public String IPSERVIDOR { get; set; }
+        public String IPCONTROLGAS1 { get; set; }
+        public String IPCONTROLGAS2 { get; set; }
+        public String IPPLC { get; set; }
+        public String REPORTESPOR { get; set; }
+        public String FECHA { get; set; }
+        public String MANAGER { get; set; }
+        public String TELEFONO { get; set; }
+        public String CORREO { get; set; }
+        public String bandCambios { get; set; }
+        public String DESTINATARIOS { get; set; }
+        public String USER_ACOUNT { get; set; }
+        public String PASSWORD { get; set; }
+        public String SERVER_SMTP { get; set; }
+        public String PORT { get; set; }
+    }
+    public class Inbox
+    {
+        public object FECHA { get; set; }
+        public object MENSAJE { get; set; }
+        public object CORREO { get; set; }
+        public object IDUSER { get; set; }
+        public object STATUSMSJ { get; set; }
+        public object INTENTOS { get; set; }
 
-        //public static String CadenaConexion { get; set; } = " Data Source=10.15.1.149;Network Library = DBMSSOCN; Initial Catalog = CORPORATIVO_MODERNOS;        User ID = sa; Password=mike ";
+    }
+    public class estados
+    {
+        public object id { get; set; }
+        public object clave { get; set; }
+        public object nombre { get; set; }
 
-        //public SqlConnection Conexion = new SqlConnection(ConfigurationManager.ConnectionStrings["ConexionSQL"].ToString());
+    }
 
+    public class municipios
+    {
+        public object id { get; set; }
+        public object estado_id { get; set; }
+        public object clave { get; set; }
+        public object nombre { get; set; }
 
+    }
 
-        private SqlConnection AbreConexion(string BD)
-        {
-            SqlConnection sqlConn;
-            if (BD == "ControlGas")
-            {
-                Conexion = ConfigurationManager.ConnectionStrings["ConexionSQLControlGas"].ToString();
-            }
-            else
-            {
-                Conexion = ConfigurationManager.ConnectionStrings["ConexionSQLLocal"].ToString();
-            }
+    public class marca
+    {
+        public string MarcID { get; set; }
+        public string MarcDesc { get; set; }
+        public string Status { get; set; }
+    }
+    public class modelo
+    {
+        public string ModelId { get; set; }
+        public string ModelDesc { get; set; }
+        public string MarcID { get; set; }
+        public string Status { get; set; }
 
-            sqlConn = new SqlConnection(Conexion);
-            sqlConn.Open();
-            if (sqlConn.State == ConnectionState.Open)
-            {
-                //AgregaLog("Se conecto")
-                return sqlConn;
-            }
-            else
-            {
-                //AgregaLog("No se conecto")
-                return null;
-            }
-        }
+    }
 
-        public DataTable GetSQL(string sSql, string BD, List<SqlParameter> ArrParametros)
-        {
-            DataTable dT = new DataTable();
-
-            SqlConnection sqlConn = new SqlConnection();
-            try
-            {
-                if (sqlConn == null)
-                {
-                    sqlConn = AbreConexion(BD);
-                    if (sqlConn == null)
-                    {
-                        return dT;
-                    }
-                    //If Not AbreConexion(ws) Then
-                    //    Return dT
-                    //End If
-                }
-                else
-                {
-                    if (sqlConn.State != ConnectionState.Open)
-                    {
-                        sqlConn = AbreConexion(BD);
-                        if (sqlConn == null)
-                        {
-                            return dT;
-                        }
-                        //If Not AbreConexion(ws) Then
-                        //    Return dT
-                        //End If
-                    }
-                }
+    public class cp
+    {
+        public object colonia { get; set; }
+        public object municipio { get; set; }
+        public object estado { get; set; }
 
 
-                SqlCommand cmd = new SqlCommand(sSql, sqlConn);
+    }
+    public class Perfiles
+    {
+        public int ID { get; set; } = 0;
+        public string namePerfil { get; set; } = "";
+        public string codcli { get; set; } = "";
+        public string Unlimited { get; set; } = "";
+        //public string nroveh = "";
+        public string diacar { get; set; } = "";
+        public string hraini { get; set; } = "";
+        public string hrafin { get; set; } = "";
+        public string carmax { get; set; } = "";
+        public string candia { get; set; } = "";
+        public string cansem { get; set; } = "";
+        public string canmes { get; set; } = "";
+        public string codgas { get; set; } = "";
+        public string codprd { get; set; } = "";
+        public string fecha { get; set; } = "";
+        public string status { get; set; } = "";
+        public string tipoPerfil { get; set; } = "";
+        public string xNombreCliente { get; set; } = "";
+        public string xProducto { get; set; } = "";
+        public string xEstacion { get; set; } = "";
+        public string Departamentos { get; set; } = "";
+        public string Odometro { get; set; } = "";
+        public string NombreDepartamento { get; set; } = "";
+    }
+    public class CentroCostos
+    {
+        public int id { get; set; } = 0;
+        public string idDepartamento { get; set; } = "";
+        public string nameCentro { get; set; } = "";
+        public string status { get; set; } = "";
 
-                cmd.Parameters.AddRange(ArrParametros.ToArray<SqlParameter>());
+    }
+    public class ReporteConsumos
+    {
+        public string ID { get; set; } = "";
+        public string DATE { get; set; } = "";
+        public string DEPARTMENT { get; set; } = "";
+        public string CC { get; set; } = "";
+        public string COMPANY { get; set; } = "";
+        public string FUEL { get; set; } = "";
+        public string QUANTITY { get; set; } = "";
+        public string DRIVER { get; set; } = "";
+        public string VEHICLE { get; set; } = "";
 
+    }
 
-                SqlDataAdapter adp = new SqlDataAdapter(cmd);
+    static class GlobalesCorporativo
+    {
+        //PADRE
+        //public static string BDCorporativoModerno = "WS1";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
+        //HIJO
+        //public static string BDCorporativoModerno = "WS2";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
 
-                adp.Fill(dT);
-
-                sqlConn.Close();
-                GC.Collect();
-            }
-            catch (Exception ex)
-            {
-                AgregaLog("Error: " + ex.Message.ToString() + " --CONSULTA:" + sSql.ToString(), "SetSQL");
-
-                //MsgBox("GetSQL: sSql=" + sSql.ToString + " - " + ex.Message.ToString)
-            }
-
-            return dT;
-        }
-
-        public int SetSQL(List<SqlParameter> ArrParametros, string sSql, string BD, object lst = null, string nameFunction = "")
-        {
-            int status = 0;
-            Home2Controller home = new Home2Controller();
-            int RegistrosAfectados = 0;
-            int id = 0;
-            int Idinsertado = 0;
-            SqlConnection sqlConn = new SqlConnection();
-
-
-            SqlTransaction transaction;
-            SqlCommand sqlCmd = new SqlCommand(sSql, sqlConn);
-
-
-            try
-            {
-                if (sqlConn == null)
-                {
-                    sqlConn = AbreConexion(BD);
-                    if (sqlConn == null)
-                    {
-                        return 0;
-                    }
-                }
-                if (sqlConn.State != ConnectionState.Open)
-                {
-                    sqlConn = AbreConexion(BD);
-                    if (sqlConn == null)
-                    {
-                        return 0;
-                    }
-                }
-                transaction = sqlConn.BeginTransaction("SampleTransaction");
-                sqlCmd.Connection = sqlConn;
-                sqlCmd.Transaction = transaction;
-                sqlCmd.Parameters.AddRange(ArrParametros.ToArray());
-                RegistrosAfectados = sqlCmd.ExecuteNonQuery();
-
-
-                //id = Convert.ToInt32(sqlCmd.ExecuteScalar());
-                if (nameFunction != "" && nameFunction != null && lst != null)
-                {
-                    status = home.SendWS(lst, nameFunction);
-
-                    if (status == 0)
-                    {
-                        RegistrosAfectados = 0;
-                        transaction.Rollback();
-                        sqlConn.Close();
-                    }
-                    else
-                    {
-                        transaction.Commit();
-                        sqlConn.Close();
-                    }
-                }
-                else
-                {
-                    transaction.Commit();
-                }
+        //CORPORATIVO
+        public static string BDCorporativoModerno = "WS3-CORPO";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
 
 
-
-                GC.Collect();
-                sqlConn.Close();
-            }
-            catch (Exception ex)
-            {
-
-                sqlConn.Close();
-                AgregaLog("Error: " + ex.Message.ToString() + " --CONSULTA:" + sSql.ToString(), "SetSQL");
-            }
-            return RegistrosAfectados;
-        }
-
-
-
-        //public DataTable GetSQL(string sSql, string BD)
-        //{
-        //    DataTable dT = new DataTable();
-        //    SqlConnection sqlConn = new SqlConnection();
-        //    try
-        //    {
-        //        if (sqlConn == null)
-        //        {
-        //            sqlConn = AbreConexion(BD);
-        //            if (sqlConn == null)
-        //            {
-        //                return dT;
-        //            }
-        //            //If Not AbreConexion(ws) Then
-        //            //    Return dT
-        //            //End If
-        //        }
-        //        else
-        //        {
-        //            if (sqlConn.State != ConnectionState.Open)
-        //            {
-        //                sqlConn = AbreConexion(BD);
-        //                if (sqlConn == null)
-        //                {
-        //                    return dT;
-        //                }
-        //                //If Not AbreConexion(ws) Then
-        //                //    Return dT
-        //                //End If
-        //            }
-        //        }
-        //        SqlCommand sqlCmd = new SqlCommand(sSql, sqlConn);
-        //        SqlDataAdapter sqlDA;
-        //        sqlDA = new SqlDataAdapter(sSql, sqlConn);
-        //        sqlDA.Fill(dT);
-
-        //        if (dT.Rows.Count == 0)
-        //        {
-        //            //AgregaLog(sSql);
-        //            //AgregaLog(sqlConn.State);
-        //            //AgregaLog(sqlConn.ConnectionString);
-        //        }
-        //        sqlConn.Close();
-        //        GC.Collect();
-        //        //
-        //        //If dT.Rows.Count > 0 ThenAgregaLog
-        //        //    For Each row As DataRow In dT.Rows
-        //        //        'Dim tam = row.ItemArray.Count
-        //        //        'For i As Integer = 0 To (tam - 1)
-        //        //        '    Dim x = row(i)
-        //        //        '    DatosQuery.Add("1")
-        //        //        'Next
-        //        //        Resultado = row.ItemArray
-        //        //    Next
-        //        //End If
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        AgregaLog("Error: " + ex.Message.ToString() + " --CONSULTA:" + sSql.ToString(), "SetSQL");
-
-        //        //MsgBox("GetSQL: sSql=" + sSql.ToString + " - " + ex.Message.ToString)
-        //    }
-
-        //    return dT;
-        //}
-
-        //public int SetSQL(string sSql, string BD, object lst = null, string nameFunction = "")
-        //{
-        //    int status = 0;
-        //    HomeController home = new HomeController();
-        //    int RegistrosAfectados = 0;
-        //    int id = 0;
-        //    int Idinsertado = 0;
-        //    SqlConnection sqlConn = new SqlConnection();
-
-
-        //    SqlTransaction transaction;
-        //    SqlCommand sqlCmd = new SqlCommand(sSql, sqlConn);
-
-
-        //    try
-        //    {
-        //        if (sqlConn == null)
-        //        {
-        //            sqlConn = AbreConexion(BD);
-        //            if (sqlConn == null)
-        //            {
-        //                return 0;
-        //            }
-        //        }
-        //        if (sqlConn.State != ConnectionState.Open)
-        //        {
-        //            sqlConn = AbreConexion(BD);
-        //            if (sqlConn == null)
-        //            {
-        //                return 0;
-        //            }
-        //        }
-        //        transaction = sqlConn.BeginTransaction("SampleTransaction");
-        //        sqlCmd.Connection = sqlConn;
-        //        sqlCmd.Transaction = transaction;
-
-        //        RegistrosAfectados = sqlCmd.ExecuteNonQuery();
-
-
-        //        //id = Convert.ToInt32(sqlCmd.ExecuteScalar());
-        //        if (nameFunction != "" && nameFunction != null && lst != null)
-        //        {
-        //            status = home.SendWS(lst, nameFunction);
-
-        //            if (status == 0)
-        //            {
-        //                RegistrosAfectados = 0;
-        //                transaction.Rollback();
-        //                sqlConn.Close();
-        //            }
-        //            else
-        //            {
-        //                transaction.Commit();
-        //                sqlConn.Close();
-        //            }
-        //        }
-        //        else
-        //        {
-        //            transaction.Commit();
-        //        }
-
-
-
-        //        GC.Collect();
-        //        sqlConn.Close();
-        //    }
-        //    catch (Exception ex)
-        //    {
-
-        //        sqlConn.Close();
-        //        AgregaLog("Error: " + ex.Message.ToString() + " --CONSULTA:" + sSql.ToString(), "SetSQL");
-        //    }
-        //    return RegistrosAfectados;
-        //}
-        public static void AgregaLog(string Valor, string Metodo)
-        {
-            StreamWriter log;
-            FileStream fileStream = null;
-            DirectoryInfo logDirInfo = null;
-            FileInfo logFileInfo;
-
-            string logFilePath = "C:\\Logs\\";
-            try
-            {
-                if (!Directory.Exists(logFilePath))
-                {
-                    Directory.CreateDirectory(logFilePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                // handle them here
-            }
-            logFilePath = logFilePath + "Log-" + System.DateTime.Today.ToString("dd-MM-yyyy") + "." + "txt";
-            logFileInfo = new FileInfo(logFilePath);
-            logDirInfo = new DirectoryInfo(logFileInfo.DirectoryName);
-            if (!logDirInfo.Exists) logDirInfo.Create();
-            if (!logFileInfo.Exists)
-            {
-                fileStream = logFileInfo.Create();
-            }
-            else
-            {
-                fileStream = new FileStream(logFilePath, FileMode.Append);
-            }
-            log = new StreamWriter(fileStream);
-            log.WriteLine(System.DateTime.Today.ToString("[dd-MM-yyyy HH:mm]") + "-" + "METODO: " + Metodo + "-- Desc: " + Valor);
-            log.Close();
-        }
-
+        public static string TablaClientesGasolineras = "ClientesGasolineras";
+        public static string TablaClientesChoferes = "ClientesChoferes";
+        public static string TablaClientesVehiculos = "ClientesVehiculos";
+        public static string TablaClientes = "Clientes";
+        //public static string StatusAPP = "PADRE";
+        public static string StatusAPP = "HIJO";  //-- CORPORATIVO
 
     }
 
 
+    static class GlobalesLocal
+    {
+        //PADRE
+        //public static string BDLocal = "TANKFARM2";//ConfigurationManager.ConnectionStrings["BDLocal"].ToString();
+        //HIJO  -- CORPORATIVO
+        public static string BDLocal = "TANKFARM";//ConfigurationManager.ConnectionStrings["BDLocal"].ToString();
+
+        public static string TablaChoferes = "CHOFERES";
+        public static string TablaCodigos_postales = "codigos_postales";
+        public static string TablaConfiguracion = "CONFIGURACION";
+        public static string TablaEstados = "estados";
+        public static string TablaIdioma = "IDIOMA";
+        public static string TablaMarca = "marca";
+        public static string Tablamodelo = "modelo";
+        public static string TablaMunicipios = "municipios";
+        public static string TablaPerfiles = "Perfiles";
+        public static string TablaRol = "ROL";
+        public static string TablaUsuarios = "USUARIOS";
+        public static string TablaDepartamento = "Departamento";
+        public static string TablaCentroCostos = "CentroCostos";
+
+    }
 
 
-
-    //public class Cliente
-    //{
-    //    public string cod { get; set; }
-    //    public string den { get; set; }
-    //    public string dom { get; set; }
-    //    public string col { get; set; }
-    //    public string del { get; set; }
-    //    public string ciu { get; set; }
-    //    public string est { get; set; }
-    //    public string tel { get; set; }
-    //    public string fax { get; set; }
-    //    public string rfc { get; set; }
-    //    public double tipval { get; set; } = 0;
-    //    public double mtoasg { get; set; } = 0;
-    //    public double mtodis { get; set; } = 0;
-    //    public double mtorep { get; set; } = 0;
-    //    public double cndpag { get; set; } = 0;
-    //    public double diarev { get; set; } = 0;
-    //    public string horrev { get; set; }
-    //    public double diapag { get; set; } = 0;
-    //    public string horpag { get; set; }
-    //    public string cto { get; set; }
-    //    public string obs { get; set; }
-    //    public string codext { get; set; }
-    //    public double datcon { get; set; } = 0;
-    //    public string codpos { get; set; }
-    //    public double pto { get; set; } = 0;
-    //    public double ptosdo { get; set; } = 0;
-    //    public double debsdo { get; set; } = 0;
-    //    public double cresdo { get; set; } = 0;
-    //    public double fmtexp { get; set; } = 0;
-    //    public string arcexp { get; set; }
-    //    public double polcor { get; set; } = 0;
-    //    public double ultcor { get; set; } = 0;
-    //    public double debnro { get; set; } = 0;
-    //    public double crenro { get; set; } = 0;
-    //    public double debglo { get; set; } = 0;
-    //    public double codtip { get; set; } = 0;
-    //    public double codzon { get; set; } = 0;
-    //    public double codgrp { get; set; } = 0;
-    //    public double codest { get; set; } = 0;
-    //    public double logusu { get; set; } = 0;
-    //    public string logfch { get; set; }
-    //    public string lognew { get; set; }
-    //    public string pai { get; set; }
-    //    public string correo { get; set; }
-    //    public double dattik { get; set; } = 0;
-    //    public double ptodebacu { get; set; } = 0;
-    //    public double ptodebfch { get; set; } = 0;
-    //    public double ptocreacu { get; set; } = 0;
-    //    public double ptocrefch { get; set; } = 0;
-    //    public double ptovenacu { get; set; } = 0;
-    //    public double ptovenfch { get; set; } = 0;
-    //    public string domnroext { get; set; }
-    //    public string domnroint { get; set; }
-    //    public double datvar { get; set; } = 0;
-    //    public string nroctapag { get; set; }
-    //    public double tipopepag { get; set; } = 0;
-    //    public string cveest { get; set; }
-    //    public string cvetra { get; set; }
-    //    public string geodat { get; set; }
-    //    public double geolat { get; set; } = 0;
-    //    public double geolng { get; set; } = 0;
-    //    public double taxext { get; set; } = 0;
-    //    public string taxextid { get; set; }
-    //    public double bcomn1cod { get; set; } = 0;
-    //    public string bcomn1den { get; set; }
-    //    public string bcomn1cta { get; set; }
-    //    public double bcomn2cod { get; set; } = 0;
-    //    public string bcomn2den { get; set; }
-    //    public double bcomn2cta { get; set; } = 0;
-    //    public double bcome1cod { get; set; } = 0;
-    //    public string bcome1den { get; set; }
-    //    public string bcome1cta { get; set; }
-    //    public double bcome2cod { get; set; } = 0;
-    //    public string bcome2den { get; set; }
-    //    public string bcome2cta { get; set; }
-    //    public double perfis { get; set; } = 0;
-    //    public string perfisnom { get; set; }
-    //    public string perfisapp { get; set; }
-    //    public string perfisapm { get; set; }
-    //    public string curp { get; set; }
-    //    public double codrefban { get; set; } = 0;
-    //    public string paisat { get; set; }
-    //    public string satuso { get; set; }
-
-
-
-    //    public string mensaje { get; set; }
-    //}
-
-
-    //public class Vehiculo
-    //{
-
-    //    public int codcli { get; set; }
-    //    public int nroveh { get; set; }
-    //    public int tar { get; set; }
-    //    public string plc { get; set; }
-    //    public string den { get; set; }
-    //    public string rsp { get; set; }
-    //    public string grp { get; set; }
-    //    public int diacar { get; set; }
-    //    public int hraini { get; set; }
-    //    public int hrafin { get; set; }
-    //    public int carmax { get; set; }
-    //    public int candia { get; set; }
-    //    public int cansem { get; set; }
-    //    public int canmes { get; set; }
-    //    public int acudia { get; set; } = 0;
-    //    public int acusem { get; set; } = 0;
-    //    public int acumes { get; set; } = 0;
-    //    public int ultcar { get; set; } = 0;
-    //    public int ultodm { get; set; } = 0;
-    //    public int codgas { get; set; }
-    //    public int codprd { get; set; }
-    //    public double debsdo { get; set; } = 0;
-    //    public int debfch { get; set; } = 0;
-    //    public int debnro { get; set; } = 0;
-    //    public double debcan { get; set; } = 0;
-    //    public int nip { get; set; } = 0;
-    //    public double ptosdo { get; set; } = 0;
-    //    public int ptofch { get; set; } = 0;
-    //    public double ptocan { get; set; } = 0;
-    //    public double premto { get; set; } = 0;
-    //    public double prepgo { get; set; } = 0;
-    //    public double prefid { get; set; } = 0;
-    //    public string cnvemp { get; set; }
-    //    public string cnvobs { get; set; }
-    //    public int cnvfch { get; set; } = 0;
-    //    public string manobs { get; set; }
-    //    public int manper { get; set; } = 0;
-    //    public int manult { get; set; } = 0;
-    //    public string rut { get; set; }
-    //    public string tag { get; set; }
-    //    public int vto { get; set; } = 0;
-    //    public int limtur { get; set; } = 0;
-    //    public int ulttur { get; set; } = 0;
-    //    public int acutur { get; set; } = 0;
-    //    public int limprd { get; set; } = 0;
-    //    public int acuprd { get; set; } = 0;
-    //    public int crefch { get; set; } = 0;
-    //    public int crenro { get; set; } = 0;
-    //    public double crecan { get; set; } = 0;
-    //    public int crefch2 { get; set; } = 0;
-    //    public int crenro2 { get; set; } = 0;
-    //    public double crecan2 { get; set; } = 0;
-    //    public int debfch2 { get; set; } = 0;
-    //    public int debnro2 { get; set; } = 0;
-    //    public double debcan2 { get; set; } = 0;
-    //    public int est { get; set; }
-    //    public string niplog { get; set; }
-    //    public int logusu { get; set; }
-    //    public string logfch { get; set; }
-    //    public string lognew { get; set; }
-    //    public string tagadi { get; set; }
-    //    public string ctapre { get; set; }
-    //    public string nropat { get; set; }
-    //    public string nroeco { get; set; }
-    //    public int hraini2 { get; set; } = 0;
-    //    public int hrafin2 { get; set; } = 0;
-    //    public int hraini3 { get; set; } = 0;
-    //    public int hrafin3 { get; set; } = 0;
-    //    public int aju { get; set; } = 0;
-    //    public double ptodebacu { get; set; } = 0;
-    //    public int ptodebfch { get; set; } = 0;
-    //    public double ptocreacu { get; set; } = 0;
-    //    public int ptocrefch { get; set; } = 0;
-    //    public double ptovenacu { get; set; } = 0;
-    //    public int ptovenfch { get; set; } = 0;
-    //    public string tagex1 { get; set; }
-    //    public string tagex2 { get; set; }
-    //    public string tagex3 { get; set; }
-    //    public double ultcan { get; set; } = 0;
-    //    public int datvar { get; set; }
-    //    public string catprd { get; set; }
-    //    public string catuni { get; set; }
-    //    public string dialim { get; set; }
-    //    public object company { get; set; }
-    //    public object profileName { get; set; }
-    //    public string Departamentos { get; set; } = "";
-    //    public string ValidacionOdometro { get; set; } = "";
-    //    public string NombreDepartamento { get; set; } = "";
-    //}
-
-    //public class ChangueStatus
-    //{
-    //    public string ID { get; set; }
-    //    public string Status { get; set; }
-    //    public string table { get; set; }
-    //    public string nameid { get; set; }
-    //    public string nameStatus { get; set; }
-    //    public string BDD { get; set; }
-
-    //}
-    //public class Choferes
-    //{
-    //    public int ID { get; set; }
-    //    public string Nombre { get; set; }
-    //    public string Telefono { get; set; }
-    //    public int IdIdioma { get; set; }
-    //    public string Gerente { get; set; }
-    //    public string Correo { get; set; }
-    //    public string Perfil { get; set; }
-    //    public int codcli { get; set; }
-    //    public string Company { get; set; }
-    //    public int nrocho { get; set; }
-    //    public string den { get; set; }
-    //    public int diacar { get; set; }
-    //    public int hraini { get; set; }
-    //    public int hrafin { get; set; }
-    //    public string tag { get; set; }
-    //    public int codest { get; set; }
-
-    //    public string Status { get; set; }
-    //    public string LastName { get; set; }
-    //    public string SecondLastName { get; set; }
-    //    public string Departamento { get; set; }
-    //    public string CentroCostos { get; set; }
-    //    public string ManagerEmail { get; set; }
-    //    public string DepartamentoName { get; set; }
-    //    public string CentroCostosName { get; set; }
-    //    public string TagOld { get; set; }
-    //    public string IDP { get; set; }
-
-    //}
-
-    //public class UsuariosSystema
-    //{
-    //    public int ID { get; set; }
-    //    public string Nombre { get; set; }
-    //    public string LastName { get; set; }
-    //    public string SecondLastName { get; set; }
-    //    public string UserName { get; set; }
-    //    public string Password { get; set; }
-    //    public int IdRol { get; set; }
-    //    public int IdIdioma { get; set; }
-    //    public string Telefono { get; set; }
-    //    public string Correo { get; set; }
-    //    public string Status { get; set; }
-    //    public string Compania { get; set; }
-    //    public string codcli { get; set; }
-    //    public string Mensaje { get; set; }
-    //    public string Rol { get; set; }
-    //    public string Idioma { get; set; }
-    //    public string Departamento { get; set; }
-    //    public string IdDep { get; set; }
-    //    public string Manager { get; set; }
-    //    public Roles Roles { get; set; }
-    //    public string Token { get; set; }
-
-
-
-
-    //}
-    //public class Languague
-    //{
-    //    public object ID { get; set; }
-    //    public object Idioma { get; set; } = "";
-    //    public object Status { get; set; } = "0";
-
-
-    //}
-    //public class Departamentos
-    //{
-    //    public string ID { get; set; }
-    //    public string Departamento { get; set; } = "";
-    //    public string Status { get; set; } = "0";
-
-
-    //}
-
-
-    //public class Marcas
-    //{
-    //    public object ID { get; set; }
-    //    public object Marca { get; set; } = "";
-    //    public object Status { get; set; } = "0";
-
-
-    //}
-
-    //public class Modelos
-    //{
-    //    public object ID { get; set; }
-    //    public object Modelo { get; set; } = "";
-    //    public object Status { get; set; } = "0";
-
-
-    //}
-
-    //public class Roles
-    //{
-    //    public object ID { get; set; }
-    //    public object Rol { get; set; } = "Sin rol";
-    //    public object Status { get; set; } = "";
-    //    public object Users { get; set; } = "";
-    //    public object Customers { get; set; } = "";
-    //    public object Vehicles { get; set; } = "";
-    //    public object Drivers { get; set; } = "";
-    //    public object Department { get; set; } = "";
-    //    public object Brand { get; set; } = "";
-    //    public object Model { get; set; } = "";
-    //    public object CostCenter { get; set; } = "";
-    //    public object Perfiles { get; set; } = "";
-    //    public object Configuration { get; set; } = "";
-
-
-    //}
-
-    //public class Configuracion
-    //{
-    //    public String ID { get; set; }
-    //    public String IPSERVIDOR { get; set; }
-    //    public String IPCONTROLGAS1 { get; set; }
-    //    public String IPCONTROLGAS2 { get; set; }
-    //    public String IPPLC { get; set; }
-    //    public String REPORTESPOR { get; set; }
-    //    public String FECHA { get; set; }
-    //    public String MANAGER { get; set; }
-    //    public String TELEFONO { get; set; }
-    //    public String CORREO { get; set; }
-    //    public String bandCambios { get; set; }
-    //    public String DESTINATARIOS { get; set; }
-    //    public String USER_ACOUNT { get; set; }
-    //    public String PASSWORD { get; set; }
-    //    public String SERVER_SMTP { get; set; }
-    //    public String PORT { get; set; }
-    //}
-    //public class Inbox
-    //{
-    //    public object FECHA { get; set; }
-    //    public object MENSAJE { get; set; }
-    //    public object CORREO { get; set; }
-    //    public object IDUSER { get; set; }
-    //    public object STATUSMSJ { get; set; }
-    //    public object INTENTOS { get; set; }
-
-    //}
-    //public class estados
-    //{
-    //    public object id { get; set; }
-    //    public object clave { get; set; }
-    //    public object nombre { get; set; }
-
-    //}
-
-    //public class municipios
-    //{
-    //    public object id { get; set; }
-    //    public object estado_id { get; set; }
-    //    public object clave { get; set; }
-    //    public object nombre { get; set; }
-
-    //}
-
-    //public class marca
-    //{
-    //    public string MarcID { get; set; }
-    //    public string MarcDesc { get; set; }
-    //    public string Status { get; set; }
-    //}
-    //public class modelo
-    //{
-    //    public string ModelId { get; set; }
-    //    public string ModelDesc { get; set; }
-    //    public string MarcID { get; set; }
-    //    public string Status { get; set; }
-
-    //}
-
-    //public class cp
-    //{
-    //    public object colonia { get; set; }
-    //    public object municipio { get; set; }
-    //    public object estado { get; set; }
-
-
-    //}
-    //public class Perfiles
-    //{
-    //    public int ID { get; set; } = 0;
-    //    public string namePerfil { get; set; } = "";
-    //    public string codcli { get; set; } = "";
-    //    public string Unlimited { get; set; } = "";
-    //    public string nroveh = "";
-    //    public string diacar { get; set; } = "";
-    //    public string hraini { get; set; } = "";
-    //    public string hrafin { get; set; } = "";
-    //    public string carmax { get; set; } = "";
-    //    public string candia { get; set; } = "";
-    //    public string cansem { get; set; } = "";
-    //    public string canmes { get; set; } = "";
-    //    public string codgas { get; set; } = "";
-    //    public string codprd { get; set; } = "";
-    //    public string fecha { get; set; } = "";
-    //    public string status { get; set; } = "";
-    //    public string tipoPerfil { get; set; } = "";
-    //    public string xNombreCliente { get; set; } = "";
-    //    public string xProducto { get; set; } = "";
-    //    public string xEstacion { get; set; } = "";
-    //    public string Departamentos { get; set; } = "";
-    //    public string Odometro { get; set; } = "";
-    //    public string NombreDepartamento { get; set; } = "";
-    //}
-    //public class CentroCostos
-    //{
-    //    public int id { get; set; } = 0;
-    //    public string idDepartamento { get; set; } = "";
-    //    public string nameCentro { get; set; } = "";
-    //    public string status { get; set; } = "";
-
-    //}
-    //public class ReporteConsumos
-    //{
-    //    public string ID { get; set; } = "";
-    //    public string DATE { get; set; } = "";
-    //    public string DEPARTMENT { get; set; } = "";
-    //    public string CC { get; set; } = "";
-    //    public string COMPANY { get; set; } = "";
-    //    public string FUEL { get; set; } = "";
-    //    public string QUANTITY { get; set; } = "";
-    //    public string DRIVER { get; set; } = "";
-    //    public string VEHICLE { get; set; } = "";
-
-    //}
-
-    //static class GlobalesCorporativo
-    //{
-    //    PADRE
-    //    public static string BDCorporativoModerno = "WS1";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
-    //    HIJO
-    //    public static string BDCorporativoModerno = "WS2";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
-
-    //    CORPORATIVO
-    //    public static string BDCorporativoModerno = "WS3-CORPO";//ConfigurationManager.ConnectionStrings["BDCorporativoModerno"].ToString();
-
-
-    //    public static string TablaClientesGasolineras = "ClientesGasolineras";
-    //    public static string TablaClientesChoferes = "ClientesChoferes";
-    //    public static string TablaClientesVehiculos = "ClientesVehiculos";
-    //    public static string TablaClientes = "Clientes";
-    //    public static string StatusAPP = "PADRE";
-    //    public static string StatusAPP = "HIJO";  //-- CORPORATIVO
-
-    //}
-
-
-    //static class GlobalesLocal
-    //{
-    //    PADRE
-    //    public static string BDLocal = "TANKFARM2";//ConfigurationManager.ConnectionStrings["BDLocal"].ToString();
-    //    HIJO  -- CORPORATIVO
-    //    public static string BDLocal = "TANKFARM";//ConfigurationManager.ConnectionStrings["BDLocal"].ToString();
-
-    //    public static string TablaChoferes = "CHOFERES";
-    //    public static string TablaCodigos_postales = "codigos_postales";
-    //    public static string TablaConfiguracion = "CONFIGURACION";
-    //    public static string TablaEstados = "estados";
-    //    public static string TablaIdioma = "IDIOMA";
-    //    public static string TablaMarca = "marca";
-    //    public static string Tablamodelo = "modelo";
-    //    public static string TablaMunicipios = "municipios";
-    //    public static string TablaPerfiles = "Perfiles";
-    //    public static string TablaRol = "ROL";
-    //    public static string TablaUsuarios = "USUARIOS";
-    //    public static string TablaDepartamento = "Departamento";
-    //    public static string TablaCentroCostos = "CentroCostos";
-
-    //}
 }
-
-
-
-
-
