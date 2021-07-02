@@ -31,13 +31,13 @@ namespace WSTankFarm.Controllers
     public class HomeController : ApiController
     {
         BDD BD = new BDD();
-        
+        BDD BD = new BDD();
 
 
 
-        //juan
+        //juan CAMANEY
         // Este metodo es utilizado para actualizar un  DESPACHO en la base de datos de tank farm
-        
+
         [HttpPost] [Route("WsUpdateDespachoControlGas")]
         public IHttpActionResult WsUpdateDespachoControlGas(Despacho despacho)
         {
