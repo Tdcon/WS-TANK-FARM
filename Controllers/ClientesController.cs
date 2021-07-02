@@ -31,7 +31,7 @@ namespace WSTankFarm.Controllers
     public class HomeController : ApiController
     {
         BDD BD = new BDD();
-        BDD BD = new BDD();
+       
 
 
 
